@@ -1,0 +1,161 @@
+<!doctype html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>finctl — settlement controller</title>
+<link rel="stylesheet" href="/static/app.css">
+</head>
+<body>
+
+<header class="topbar">
+  <div class="brand">
+    <span class="mark">₹</span>
+    <div>
+      <h1>finctl</h1>
+      <p>autonomous three-way settlement reconciliation</p>
+    </div>
+  </div>
+  <div class="topbar-right">
+    <div class="badge" id="adjudicator-badge" title="what decided the residual">
+      <span class="dot"></span><span id="adjudicator-name">loading</span>
+    </div>
+    <button id="refresh" class="ghost">re-run</button>
+  </div>
+</header>
+
+<section class="kpis" id="kpis"></section>
+
+<nav class="tabs" id="tabs">
+  <button class="tab active" data-view="overview">Overview</button>
+  <button class="tab" data-view="exceptions">Exception register</button>
+  <button class="tab" data-view="matches">Matches</button>
+  <button class="tab" data-view="journal">Journal</button>
+  <button class="tab" data-view="scenarios">Edge cases</button>
+</nav>
+
+<main>
+
+  <!-- ---------------------------------------------------------------- -->
+  <section class="view active" id="view-overview">
+    <div class="grid">
+
+      <article class="card span2">
+        <header>
+          <h2>Where the work went</h2>
+          <p>Each pass runs only on what the previous one could not explain. The
+             cheap, certain tiers carry the volume; the expensive ones see a
+             small residual.</p>
+        </header>
+        <div id="funnel" class="funnel"></div>
+      </article>
+
+      <article class="card">
+        <header>
+          <h2>Accuracy</h2>
+          <p>Measured against held-out labels the engine never sees.</p>
+        </header>
+        <div id="scorecard" class="scorecard"></div>
+      </article>
+
+      <article class="card">
+        <header>
+          <h2>The guardrail</h2>
+          <p>Every match is re-derived from source records by a verifier that
+             can overrule the reasoning layer.</p>
+        </header>
+        <div id="verification"></div>
+      </article>
+
+      <article class="card">
+        <header>
+          <h2>Findings a matcher alone would miss</h2>
+          <p>Money that reconciles perfectly and is still wrong.</p>
+        </header>
+        <div id="findings"></div>
+      </article>
+
+      <article class="card span2">
+        <header>
+          <h2>Open items by reason</h2>
+          <p>Every break carries a reason code, an owner and a next action.</p>
+        </header>
+        <div id="reasons" class="reasons"></div>
+      </article>
+
+    </div>
+  </section>
+
+  <!-- ---------------------------------------------------------------- -->
+  <section class="view" id="view-exceptions">
+    <div class="toolbar">
+      <input type="search" id="exc-search" placeholder="search summaries and record ids...">
+      <select id="exc-severity">
+        <option value="all">all severities</option>
+        <option value="critical">critical only</option>
+        <option value="high">high and above</option>
+        <option value="medium">medium and above</option>
+      </select>
+      <select id="exc-reason"><option value="all">all reasons</option></select>
+      <span class="toolbar-note" id="exc-count"></span>
+    </div>
+    <div class="split">
+      <div class="list" id="exc-list"></div>
+      <aside class="detail" id="exc-detail">
+        <div class="empty">Select an exception to see its evidence trail.</div>
+      </aside>
+    </div>
+  </section>
+
+  <!-- ---------------------------------------------------------------- -->
+  <section class="view" id="view-matches">
+    <div class="toolbar">
+      <select id="match-tier"><option value="all">all tiers</option></select>
+      <span class="toolbar-note" id="match-count"></span>
+    </div>
+    <div class="list wide" id="match-list"></div>
+  </section>
+
+  <!-- ---------------------------------------------------------------- -->
+  <section class="view" id="view-journal">
+    <div class="grid">
+      <article class="card">
+        <header>
+          <h2>Trial balance</h2>
+          <p>Posted from verified matches only.</p>
+        </header>
+        <div id="trial-balance"></div>
+      </article>
+      <article class="card span2">
+        <header>
+          <h2>Journal entries</h2>
+          <p>Entry ids derive from the match, so re-running cannot double-post.</p>
+        </header>
+        <div id="journal-entries"></div>
+      </article>
+    </div>
+  </section>
+
+  <!-- ---------------------------------------------------------------- -->
+  <section class="view" id="view-scenarios">
+    <article class="card">
+      <header>
+        <h2>The edge-case catalogue</h2>
+        <p>Every scenario the synthetic batch deliberately contains, with how
+           many cases the engine got right. Rows marked <em>unresolvable</em>
+           cannot be matched from the data — being flagged is the correct
+           outcome, and matching them would be a failure.</p>
+      </header>
+      <div id="scenario-table"></div>
+    </article>
+  </section>
+
+</main>
+
+<footer>
+  <span id="footer-note">zero dependencies · pure python standard library · deterministic</span>
+</footer>
+
+<script src="/static/app.js"></script>
+</body>
+</html>
