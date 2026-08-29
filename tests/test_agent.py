@@ -141,14 +141,43 @@ class TestContainment(AgentHarness):
         self.assertEqual(agent.usage.declined, 1)
 
     def test_prose_twice_gives_up(self):
-        """The reminder is offered once, not indefinitely."""
+        """The reminder is offered once; after that the tool is required."""
         agent = self.build([
             _reply(content="probably the first one"),
             _reply(content="yes, definitely the first one"),
         ])
         outcome = agent.adjudicate(self.request())
         self.assertEqual(outcome.decision, "abstain")
-        self.assertIn("prose", outcome.rationale)
+        self.assertIn("would not submit a decision", outcome.rationale)
+
+    def test_the_decision_tool_is_required_after_a_reminder(self):
+        """The second attempt constrains sampling rather than asking again.
+
+        Some models reliably narrate instead of calling the tool, which reads
+        as a refusal but is really a truncation. Requiring the function is what
+        made the demo stop failing every other run.
+        """
+        seen: list[object] = []
+        agent = self.build([
+            _reply(content="thinking out loud"),
+            _reply([_tool_call("submit_decision", {
+                "decision": "decline", "reasoning": "done",
+            })]),
+        ])
+        original = agent._request
+
+        def spy(path: str, payload: dict | None = None) -> dict:
+            if payload:
+                seen.append(payload.get("tool_choice"))
+            return original(path, payload)
+
+        agent._request = spy  # type: ignore[method-assign]
+        agent.adjudicate(self.request())
+
+        self.assertEqual(seen[0], "auto")
+        self.assertEqual(
+            seen[1], {"type": "function", "function": {"name": "submit_decision"}}
+        )
 
     def test_running_out_of_turns_abstains(self):
         """The model investigates forever and never concludes."""

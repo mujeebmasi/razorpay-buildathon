@@ -431,7 +431,15 @@ class AgentAdjudicator:
                 "model": self.model,
                 "messages": messages,
                 "tools": tools,
-                "tool_choice": "auto",
+                # After one ignored reminder, stop asking. Requiring the
+                # function makes deciding a constraint on sampling rather than
+                # a request the model may narrate its way around -- some models
+                # reliably answer in prose otherwise, which is a truncation
+                # dressed as a refusal.
+                "tool_choice": (
+                    {"type": "function", "function": {"name": "submit_decision"}}
+                    if nudged else "auto"
+                ),
                 "temperature": 0,
                 "max_tokens": self.max_tokens,
             })
@@ -454,7 +462,7 @@ class AgentAdjudicator:
                 if nudged:
                     return AdjudicationResult(
                         "abstain", (), 0.0,
-                        "agent replied in prose instead of submitting a decision",
+                        "agent would not submit a decision even when required to",
                     )
                 nudged = True
                 messages.append({
