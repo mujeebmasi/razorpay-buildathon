@@ -1,8 +1,21 @@
+# Python
 __pycache__/
 *.py[cod]
-out/
 .venv/
 venv/
+
+# Run artefacts
+out/
+
+# Frontend toolchain.
+# NOTE: web/dist is deliberately NOT ignored. The React build is committed so
+# that `python -m finctl serve` works on a clone with no Node installed, which
+# is the project's zero-install promise.
+web/node_modules/
+web/.vite/
+*.tsbuildinfo
+
+# Editors / OS
 .DS_Store
 .idea/
 .vscode/

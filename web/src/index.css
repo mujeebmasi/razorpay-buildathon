@@ -1,0 +1,294 @@
+@import "tailwindcss";
+
+/* Dark mode is driven by an explicit attribute rather than the media query,
+   because the toggle has to win over the system preference. */
+@custom-variant dark (&:where([data-theme="dark"], [data-theme="dark"] *));
+
+/* ═══════════════════════════════════════════════════════ palette ══
+   Semantic tokens, not colour names. Every value is defined twice —
+   once per theme — and the Tailwind theme below points at the variable
+   rather than the literal, so `bg-surface` re-themes at runtime with no
+   class swapping anywhere in the components.
+   ═════════════════════════════════════════════════════════════════ */
+
+:root,
+:root[data-theme="dark"] {
+  --bg: #0a0c10;
+  --bg-elev: #11141b;
+  --surface: #151922;
+  --surface-2: #1b202b;
+  --surface-3: #222836;
+  --line: #262d3b;
+  --line-soft: #1d2330;
+
+  --ink: #e9edf5;
+  --ink-2: #9aa5b8;
+  --ink-mut: #667186;
+
+  --accent: #5b93ff;
+  --accent-2: #3a6fdb;
+  --accent-soft: #5b93ff1f;
+
+  --ok: #33c48c;
+  --ok-soft: #33c48c1c;
+  --warn: #e9b53f;
+  --warn-soft: #e9b53f1c;
+  --high: #f28744;
+  --high-soft: #f287441c;
+  --crit: #f2564f;
+  --crit-soft: #f2564f1c;
+  --info: #7c8798;
+
+  --scrim: rgb(0 0 0 / 0.55);
+  --shadow-1: 0 1px 2px rgb(0 0 0 / 0.4);
+  --shadow-2: 0 4px 16px rgb(0 0 0 / 0.34);
+  --shadow-3: 0 18px 48px rgb(0 0 0 / 0.5);
+}
+
+:root[data-theme="light"] {
+  --bg: #f5f7fa;
+  --bg-elev: #ffffff;
+  --surface: #ffffff;
+  --surface-2: #f2f5f9;
+  --surface-3: #e7ecf3;
+  --line: #dde3ec;
+  --line-soft: #e9eef4;
+
+  --ink: #10151d;
+  --ink-2: #4a5567;
+  --ink-mut: #78849a;
+
+  --accent: #2a63d8;
+  --accent-2: #1f4db0;
+  --accent-soft: #2a63d814;
+
+  --ok: #16875a;
+  --ok-soft: #16875a14;
+  --warn: #a97708;
+  --warn-soft: #a9770814;
+  --high: #c25a15;
+  --high-soft: #c25a1514;
+  --crit: #cf2f28;
+  --crit-soft: #cf2f2814;
+  --info: #6b7686;
+
+  --scrim: rgb(16 21 29 / 0.4);
+  --shadow-1: 0 1px 2px rgb(16 21 29 / 0.06);
+  --shadow-2: 0 4px 16px rgb(16 21 29 / 0.08);
+  --shadow-3: 0 18px 48px rgb(16 21 29 / 0.16);
+}
+
+@theme inline {
+  --color-bg: var(--bg);
+  --color-bg-elev: var(--bg-elev);
+  --color-surface: var(--surface);
+  --color-surface-2: var(--surface-2);
+  --color-surface-3: var(--surface-3);
+  --color-line: var(--line);
+  --color-line-soft: var(--line-soft);
+
+  --color-ink: var(--ink);
+  --color-ink-2: var(--ink-2);
+  --color-ink-mut: var(--ink-mut);
+
+  --color-accent: var(--accent);
+  --color-accent-2: var(--accent-2);
+  --color-accent-soft: var(--accent-soft);
+
+  --color-ok: var(--ok);
+  --color-ok-soft: var(--ok-soft);
+  --color-warn: var(--warn);
+  --color-warn-soft: var(--warn-soft);
+  --color-high: var(--high);
+  --color-high-soft: var(--high-soft);
+  --color-crit: var(--crit);
+  --color-crit-soft: var(--crit-soft);
+  --color-info: var(--info);
+
+  /* No web fonts: the project's premise is that it runs anywhere with
+     nothing installed, and a dashboard needing the network to look right
+     would undercut that. */
+  --font-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Inter, Roboto,
+    "Helvetica Neue", Arial, sans-serif;
+  --font-mono: ui-monospace, "SF Mono", "Cascadia Mono", "Segoe UI Mono", Menlo,
+    Consolas, monospace;
+
+  --ease-out-soft: cubic-bezier(0.22, 0.8, 0.28, 1);
+}
+
+@layer base {
+  * {
+    scrollbar-width: thin;
+    scrollbar-color: var(--surface-3) transparent;
+  }
+
+  html {
+    -webkit-text-size-adjust: 100%;
+    /* Reserve the scrollbar gutter permanently. Without it, locking body
+       scroll to open the bottom sheet removes the scrollbar and the whole
+       page jumps sideways by its width — and so does switching between a
+       tall tab and a short one. */
+    scrollbar-gutter: stable;
+  }
+
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--ink);
+    font-family: var(--font-sans);
+    font-size: 14px;
+    line-height: 1.55;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    overflow-wrap: break-word;
+  }
+
+  /* Every figure here is meant to be compared down a column. */
+  .font-mono,
+  th,
+  td {
+    font-variant-numeric: tabular-nums;
+  }
+
+  :focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+    border-radius: 6px;
+  }
+
+  ::-webkit-scrollbar {
+    width: 9px;
+    height: 9px;
+  }
+  ::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  ::-webkit-scrollbar-thumb {
+    background: var(--surface-3);
+    border-radius: 5px;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    background: var(--line);
+  }
+}
+
+@layer components {
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: 14px;
+    padding: 18px 20px;
+    box-shadow: var(--shadow-1);
+  }
+
+  .kbd {
+    display: inline-block;
+    padding: 1px 6px;
+    border-radius: 5px;
+    border: 1px solid var(--line);
+    background: var(--surface-2);
+    color: var(--ink-mut);
+    font-family: var(--font-mono);
+    font-size: 10.5px;
+    line-height: 1.6;
+  }
+
+  /* Native select needs its own arrow once appearance is stripped. */
+  .select {
+    appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23667186' stroke-width='2' stroke-linecap='round'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 9px center;
+    background-size: 15px;
+  }
+
+  .clamp-2 {
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+}
+
+@layer utilities {
+  .animate-shimmer {
+    background: linear-gradient(
+      90deg,
+      var(--surface-2) 25%,
+      var(--surface-3) 50%,
+      var(--surface-2) 75%
+    );
+    background-size: 200% 100%;
+    animation: shimmer 1.4s infinite linear;
+  }
+  @keyframes shimmer {
+    to {
+      background-position: -200% 0;
+    }
+  }
+
+  .animate-rise {
+    animation: rise 0.28s var(--ease-out-soft);
+  }
+  @keyframes rise {
+    from {
+      opacity: 0;
+      transform: translateY(6px);
+    }
+    to {
+      opacity: 1;
+      transform: none;
+    }
+  }
+
+  .animate-sheet-up {
+    animation: sheet-up 0.3s var(--ease-out-soft);
+  }
+  @keyframes sheet-up {
+    from {
+      transform: translateY(100%);
+    }
+    to {
+      transform: none;
+    }
+  }
+
+  .animate-fade {
+    animation: fade 0.22s var(--ease-out-soft);
+  }
+  @keyframes fade {
+    from {
+      opacity: 0;
+    }
+    to {
+      opacity: 1;
+    }
+  }
+}
+
+/* Someone who asked the system for less motion means it. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+  }
+}
+
+/* The register should survive being printed and carried into a meeting. */
+@media print {
+  body {
+    background: #fff;
+    color: #000;
+  }
+  .no-print {
+    display: none !important;
+  }
+  .card {
+    break-inside: avoid;
+    border-color: #ccc;
+    box-shadow: none;
+  }
+}

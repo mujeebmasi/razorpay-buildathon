@@ -7,7 +7,9 @@ exception register that names a reason, an owner, and a next action.
 
 Built for **Razorpay Track 04 — AI Finance Controller**.
 
-Zero dependencies. Pure Python standard library. 89 tests.
+**Engine:** pure Python standard library, no runtime dependencies, 105 tests.
+**Dashboard:** React 19 + TypeScript + Tailwind CSS 4, built with Vite — and
+the build is committed, so running it still needs nothing but Python.
 
 ---
 
@@ -126,7 +128,8 @@ see the failures that matter most:
 
 ## 3. Quickstart
 
-No dependencies. No install. Python 3.11+ and nothing else.
+Python 3.11+ and nothing else. The dashboard ships pre-built, so there is no
+`npm install` between a clone and a running demo.
 
 ```bash
 python -m datagen.generate --cases 900 --out data
@@ -140,9 +143,12 @@ python -m finctl recon --data data
 python -m finctl serve --data data --port 8000
 ```
 
-The third opens a dashboard at `http://127.0.0.1:8000` — match funnel, accuracy
-scorecard, the exception register with drill-down evidence trails, the journal,
-and the edge-case catalogue with per-scenario results.
+The third opens the dashboard at `http://127.0.0.1:8000` — match funnel,
+accuracy scorecard, a daily reconciliation chart, the exception register with
+drill-down evidence trails, the journal, and the edge-case catalogue. It is
+responsive down to a phone, has light and dark themes, and is keyboard-driven
+(<kbd>/</kbd> search, <kbd>J</kbd>/<kbd>K</kbd> move, <kbd>1</kbd>–<kbd>5</kbd>
+switch tab, <kbd>T</kbd> theme, <kbd>R</kbd> re-run).
 
 ```bash
 python -m unittest discover -s tests -t .
@@ -157,6 +163,24 @@ python -m finctl exceptions --data data --severity high
 ```bash
 python -m finctl journal --data data
 ```
+
+### Working on the frontend
+
+Only needed if you are changing the UI:
+
+```bash
+cd web && npm install && npm run dev
+```
+
+Vite serves on `:5173` with hot reload and proxies `/api` to the Python server
+on `:8000`, so run `python -m finctl serve` alongside it. When you are done:
+
+```bash
+cd web && npm run build
+```
+
+That refreshes `web/dist`, which is committed — see
+[§6.5](#65-the-frontend).
 
 ---
 
@@ -475,9 +499,62 @@ finctl/
   pipeline.py            the one path CLI, dashboard and tests all share
   cli.py                 recon / exceptions / journal / serve
 
-server/             dependency-free dashboard: http.server + vanilla JS
-tests/              89 tests
+server/app.py       API + static host: stdlib http.server, no framework
+
+web/                the dashboard - React 19, TypeScript, Tailwind 4, Vite
+  src/types.ts      the API contract, mirrored from the Python payloads
+  src/lib/api.ts    typed fetch layer, one function per endpoint
+  src/hooks/        theme, aborting fetch, media query, debounce
+  src/components/   AppBar, KpiRow, DailyChart, primitives, Toast
+  src/views/        Overview, Exceptions, Matches, Journal, Scenarios
+  dist/             COMMITTED build output - see below
+
+tests/              105 tests, including the API/UI seam
 ```
+
+### 6.5 The frontend
+
+The dashboard is a React 19 + TypeScript + Tailwind 4 single-page app built
+with Vite. **The production build is committed to the repository**, and that is
+the design decision worth explaining.
+
+A modern frontend toolchain and a zero-install demo usually pull in opposite
+directions: React needs Node, `npm install`, and a build step, while the whole
+premise of this project is that someone can clone it and run it with nothing
+but Python. Committing `web/dist` resolves the tension rather than picking a
+side. Developers get the full toolchain with hot reload; a reviewer gets a
+working dashboard from `python -m finctl serve` and never learns that Node was
+involved.
+
+The cost is a build artefact in version control, which is normally a smell.
+Here it is a deliberate distribution choice, and `tests/test_server.py` guards
+it: one test asserts the build exists, another parses the served HTML and
+fetches every asset it references, so a stale or missing bundle fails the suite
+instead of silently rendering a blank page.
+
+What the frontend does with its types is the part that earns the stack.
+`web/src/types.ts` mirrors the Python payload builders exactly, so a field
+renamed on the server surfaces as a compile error in every component that read
+it. TypeScript can only check the shape it was told about, though, so the
+runtime half is asserted from the Python side: `TestApiContract` walks every
+field the types declare and fails if the server stops sending one.
+
+Notes on the smaller choices:
+
+- **No charting library.** The daily chart and every bar are hand-drawn SVG.
+  The shapes are simple, and drawing them directly means they read theme tokens
+  as CSS variables and re-colour instantly on a theme flip, with no chart-level
+  theme config to keep in sync.
+- **No state or data-fetching library.** Every request is a plain GET against a
+  batch that only changes on an explicit re-run, so caching machinery would be
+  weight without a job. What does matter is aborting in-flight requests, since
+  filters change on every keystroke and a stale response landing after a newer
+  one would show the wrong rows -- so that is what the fetch hook actually does.
+- **No web fonts.** A dashboard that needs the network to look right would
+  undercut the offline premise, so it uses the system font stack.
+- **Semantic colour tokens.** Every colour is defined twice, once per theme,
+  and Tailwind's theme points at the variable rather than the literal. Nothing
+  in the components knows which theme is active.
 
 ### 6.4 Two details that carry disproportionate weight
 
@@ -1007,5 +1084,5 @@ candidates at 0.81 and 0.79 mean the evidence does not distinguish them.
 
 ---
 
-*Zero dependencies · pure Python standard library · deterministic · 89 tests ·
-0.000% false match rate*
+*Pure-Python engine, zero runtime dependencies · React + TypeScript dashboard,
+pre-built · deterministic · 105 tests · 0.000% false match rate*
