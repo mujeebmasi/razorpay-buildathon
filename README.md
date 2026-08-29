@@ -486,7 +486,7 @@ finctl/
                     bounded Damerau-Levenshtein, as separate stages
     subsetsum.py    meet-in-the-middle + branch-and-bound, plus the credibility
                     machinery that decides whether a sum is evidence at all
-    index.py        three-way candidate generation; keeps matching near-linear
+    index.py        three-way candidate generation; bounds the candidate pool
     reconcile.py    the cascade and the audits
 
   adjudicate/
@@ -887,9 +887,13 @@ whose output is a ledger I consider the explicitness a feature; with millions of
 examples and tolerance for error, the opposite would hold.
 
 **Throughput degrades with density.** ~8,800 rec/s at 5.3k records, ~1,800 rec/s
-at 29.5k. The deterministic cascade stays near-linear; the *residual* reaching
-the per-record reasoning stage is what grows. Real data with payout references
-would shrink that residual substantially.
+at 29.5k. Measured per 1,000 records, the cascade costs 7 ms at 612 records and
+103 ms at 29,526 — so it is *not* near-linear. The cause is density, not volume:
+the period is fixed at 31 days, so more records means denser days and larger
+candidate windows, making candidate generation roughly O(n·w) with w itself
+growing. The fix is the shard key — (merchant, settlement date) caps window
+occupancy, and shards are embarrassingly parallel because no pass reaches across
+a date window. The residual share plateaus near 24%.
 
 **Single process.** The cascade parallelises cleanly by settlement date — the
 date window is a natural shard boundary — but that was not needed at this
@@ -1075,7 +1079,8 @@ candidates at 0.81 and 0.79 mean the evidence does not distinguish them.
 - **Ledger matching is one-to-one on `order_id`.** Partial invoice application
   and multi-invoice payments are not modelled.
 
-- **Single process.** Parallelising by settlement date is straightforward but
+- **Single process.** Parallelising by (merchant, settlement date) is
+  straightforward and is also what caps the density cost described above, but it
   was not needed at this volume.
 
 - **The exception register is large** and dominated by one scenario.
