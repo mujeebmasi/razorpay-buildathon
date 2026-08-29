@@ -555,7 +555,7 @@ class Generator:
             captured_on=ist_date, capture_time=moment_utc.astimezone(IST)
         )
         # Stamped in UTC with a Z suffix, exactly as a PSP API returns it, so
-        # the ingest layer has to do the conversion itself.
+        # the ingest layer has to do the conversion itself
         payment["captured_at"] = moment_utc.strftime("%Y-%m-%dT%H:%M:%SZ")
 
         net = int(Decimal(payment["net_amount"]) * 100)
