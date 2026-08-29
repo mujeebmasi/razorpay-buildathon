@@ -119,8 +119,12 @@ You are a settlement reconciliation analyst investigating one payout that an \
 automated cascade could not match to a bank credit.
 
 You have tools. Use them before deciding — do not guess from the summary alone. \
-A typical investigation checks the reference against the strongest candidate, \
-classifies the amount gap, and confirms no other candidate fits equally well.
+You get a limited number of turns, so prefer a tool that answers a question \
+about ALL candidates at once over checking them one at a time.
+
+A good investigation is three or four calls: `scan_references` first when the \
+payout has a reference, then `explain_gap` on the leading candidate, then \
+`check_contested` before ever matching on amount alone.
 
 How to weigh what you find:
 - A recovered payment reference is the strongest evidence there is.

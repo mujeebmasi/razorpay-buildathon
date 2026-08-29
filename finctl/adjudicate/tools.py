@@ -91,6 +91,13 @@ class Toolbox:
                "seriously considering.",
                line, ["line_id"]),
 
+            fn("scan_references",
+               "Score the payout's reference against EVERY candidate at once and "
+               "return them ranked. Start here whenever the payout has a reference -- "
+               "it answers 'which of these carries it?' in one call, instead of "
+               "checking candidates one at a time.",
+               {}, []),
+
             fn("score_reference",
                "Check whether the payout's reference number appears in a candidate's "
                "narration. Returns how it matched -- printed in full, truncated by the "
@@ -142,6 +149,7 @@ class Toolbox:
         """Run a tool and record it. Unknown names are reported, never raised."""
         handler: Callable[..., Any] | None = {
             "get_credit": self._get_credit,
+            "scan_references": self._scan_references,
             "score_reference": self._score_reference,
             "explain_gap": self._explain_gap,
             "payout_components": self._payout_components,
@@ -188,6 +196,54 @@ class Toolbox:
             "narration": line.narration,
             "banking_days_from_payout": banking_days_between(
                 self._settlement.settled_on, line.value_date
+            ),
+        }
+
+    def _scan_references(self) -> dict[str, Any]:
+        """Score the reference against every candidate in one pass.
+
+        Checking candidates one at a time is how an agent exhausts its turn
+        budget on a wide candidate set and concludes nothing. The deterministic
+        cascade never scans linearly either -- it indexes -- so this exposes the
+        same shape of answer.
+        """
+        reference = self._settlement.utr
+        if not reference:
+            return {
+                "reference": None,
+                "verdict": "this payout carries no reference, so narration cannot "
+                           "confirm or deny any candidate. Judge on amount, and call "
+                           "check_contested before matching on amount alone.",
+            }
+
+        lines = self.batch.index_bank_lines()
+        scored = []
+        for line_id in self.candidate_ids:
+            line = lines.get(line_id)
+            if line is None:
+                continue
+            score, mechanism, _ = score_reference_match(reference, line.narration)
+            scored.append({
+                "line_id": line_id,
+                "score": round(score, 3),
+                "mechanism": mechanism,
+                "amount": format_inr(line.amount),
+            })
+
+        scored.sort(key=lambda row: (-row["score"], row["line_id"]))
+        best = scored[0] if scored else None
+        hits = [row for row in scored if row["score"] > 0]
+
+        return {
+            "reference": reference,
+            "candidates_scanned": len(scored),
+            "candidates_carrying_it": len(hits),
+            "ranked": scored[:8],
+            "verdict": (
+                f"{best['line_id']} carries the reference ({best['mechanism']}, "
+                f"score {best['score']})" if best and best["score"] >= 0.75
+                else "no candidate carries this reference; judge on amount instead, "
+                     "and call check_contested before matching on amount alone"
             ),
         }
 

@@ -5,6 +5,7 @@
     python -m finctl exceptions --data data --severity high
     python -m finctl journal --data data
     python -m finctl serve --port 8000
+    python -m finctl agent --data data --cases 3
 
 Output is written for a terminal an operator is actually reading: the headline
 figures first, then where the work went, then what is still open. The exception
@@ -253,9 +254,10 @@ def main(argv: Sequence[str] | None = None) -> int:
     )
     parser.add_argument(
         "command",
-        choices=["recon", "exceptions", "journal", "serve"],
+        choices=["recon", "exceptions", "journal", "serve", "agent"],
         help="recon: full run with scorecard. exceptions: the open register. "
-             "journal: trial balance and entries. serve: the dashboard.",
+             "journal: trial balance and entries. serve: the dashboard. "
+             "agent: watch the agent investigate a few cases, live.",
     )
     parser.add_argument("--data", type=Path, default=Path("data"))
     parser.add_argument(
@@ -280,6 +282,10 @@ def main(argv: Sequence[str] | None = None) -> int:
     parser.add_argument("--severity", default="medium",
                         choices=[s.value for s in Severity])
     parser.add_argument("--limit", type=int, default=15)
+    parser.add_argument(
+        "--cases", type=int, default=3,
+        help="how many cases the `agent` command narrates",
+    )
     parser.add_argument("--json", type=Path, help="also write the summary as JSON")
     parser.add_argument("--port", type=int, default=8000)
     args = parser.parse_args(argv)
@@ -288,6 +294,18 @@ def main(argv: Sequence[str] | None = None) -> int:
         from server.app import serve
 
         return serve(args.data, port=args.port, adjudicator=args.adjudicator)
+
+    if args.command == "agent":
+        import os
+
+        from finctl.demo_agent import demo
+
+        return demo(
+            args.data,
+            cases=args.cases,
+            provider=args.provider,
+            model=args.model or os.environ.get(f"{args.provider.upper()}_MODEL") or None,
+        )
 
     if not args.data.exists():
         raise SystemExit(

@@ -525,6 +525,7 @@ It is a **tool-using agent**, not a classifier with a prompt. Given one
 unresolved payout and a fixed candidate set, it decides what to look at next:
 
 ```
+scan_references     which of ALL candidates carries the payout's reference?
 get_credit          the full bank narration for a candidate
 score_reference     does the payout's reference appear in that narration?
 explain_gap         is the amount difference rounding, a 100x unit bug, or
@@ -539,10 +540,45 @@ Those are the cascade's own primitives. The agent gets no new powers, only the
 freedom to combine them in an order no fixed pass would — and the sequence it
 chooses is recorded as the evidence trail for its decision.
 
-Run it with:
+#### Watching it work
+
+`recon` reports totals, which is the right shape for a batch job and the wrong
+shape for seeing what the agent does. To watch it investigate, live:
 
 ```bash
-python -m finctl recon --data data --adjudicator agent
+python -m finctl agent --data data --cases 3
+```
+
+That runs the deterministic cascade first, then hands the highest-value
+unresolved cases to the agent one at a time and prints every tool call as it
+happens. Typical output:
+
+```
+CASE 1/2   setl_003680
+  payout    ₹12,40,438.08  2026-07-10
+  reference ICICR51060403936
+  cascade   gave up with: missing_bank_credit
+  offered   19 candidate credit(s)
+
+  the agent chose to look at:
+    1. scan_references()
+
+  DECLINED   confidence 0.00
+  reasoning: scan_references found no candidate credit containing the payout
+  reference ICICR51060403936. No candidate credit amount is close to the payout
+  amount, so there is no plausible match.
+```
+
+For the whole pipeline with the agent on the residual:
+
+```bash
+python -m finctl recon --data data --adjudicator agent --agent-budget 12
+```
+
+Offline tests for the agent's containment rules — no key, no network, no spend:
+
+```bash
+python -m unittest tests.test_agent -v
 ```
 
 Written against the **OpenAI-compatible** schema over stdlib `urllib`, so one
@@ -567,7 +603,9 @@ It never sees raw paise and never does arithmetic — tools return formatted
 amounts and pre-classified gaps. It is asked to weigh evidence, which it is good
 at, not to add up crores, which it is not.
 
-#### What `check_contested` fixed
+#### Two gaps that only running it exposed
+
+**`check_contested`.** 
 
 The first live run exposed a real gap. Handed a payout with no reference, the
 agent found a credit matching on amount *and* date and matched it at 0.99
@@ -583,6 +621,17 @@ the same case now returns:
 > to distinguish them. Hence we cannot uniquely identify the credit."*
 
 Declining. Which is correct.
+
+**`scan_references`.** Handed a payout with 19 candidates, the agent spent all
+six of its turns calling `score_reference` on candidates one at a time and never
+reached a decision — a turn-budget exhaustion that looked like a refusal but was
+really a timeout. The fix was to expose the question it was actually asking:
+*which of all these carries my reference?* One call instead of nineteen. The
+same two cases went from 8 tool calls and 42.6s with one failure, to 2 calls and
+6.0s with none.
+
+Both were tooling defects, and both were invisible until the agent ran against
+real data. Neither would have surfaced from reading the code.
 
 #### Measured, on this dataset
 
