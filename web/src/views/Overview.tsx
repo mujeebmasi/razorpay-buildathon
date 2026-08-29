@@ -198,6 +198,54 @@ function Findings({ run }: { run: RunSummary }) {
   )
 }
 
+/* ── the agent, when one ran ──────────────────────────────────────── */
+
+function Agent({ run }: { run: RunSummary }) {
+  const agent = run.agent
+  if (!agent) return null
+
+  const investigated = agent.decided + agent.declined
+  const perCase = investigated ? agent.tool_calls / investigated : 0
+
+  return (
+    <Card
+      span={5}
+      title="The agent"
+      blurb="Investigates what the deterministic cascade could not explain, using the engine's own instruments."
+    >
+      <Metric head label="cases investigated" value={num(investigated)} />
+      <Metric
+        label="tool calls made"
+        note={perCase ? `${perCase.toFixed(1)} per case, chosen by the agent` : undefined}
+        value={num(agent.tool_calls)}
+      />
+      <Metric label="matched" value={num(agent.decided)} tone="ok" />
+      <Metric
+        label="declined"
+        note="refusing is a valid answer, not a failure"
+        value={num(agent.declined)}
+      />
+      {agent.failed > 0 && (
+        <Metric
+          label="failed, degraded to abstention"
+          value={num(agent.failed)}
+          tone="warn"
+        />
+      )}
+      <Metric
+        label="tokens"
+        note={`${num(agent.requests)} requests in ${agent.seconds.toFixed(1)}s`}
+        value={`${num(agent.prompt_tokens)} / ${num(agent.completion_tokens)}`}
+      />
+      <Note>
+        Everything the agent proposes still goes to the verifier, which recomputes from
+        the original records and can veto it. A failure of any kind &mdash; transport,
+        timeout, a fabricated id &mdash; becomes an abstention, never a match.
+      </Note>
+    </Card>
+  )
+}
+
 /* ── the view ─────────────────────────────────────────────────────── */
 
 export function Overview({
@@ -248,6 +296,8 @@ export function Overview({
       >
         <Guardrail run={run} />
       </Card>
+
+      <Agent run={run} />
 
       <Card
         span={7}

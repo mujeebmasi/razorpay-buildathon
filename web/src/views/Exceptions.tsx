@@ -97,6 +97,29 @@ function DetailBody({ item }: { item: ExceptionDetail | null }) {
         <dd className="m-0 font-mono text-ink-2">{num(item.candidate_count)} candidate(s)</dd>
       </dl>
 
+      {item.agent_trace?.length > 0 && (
+        <>
+          <SectionTitle>How the agent investigated</SectionTitle>
+          <ol className="m-0 flex list-none flex-col gap-1.5 p-0">
+            {item.agent_trace.map((step, i) => (
+              <li
+                key={i}
+                className="flex items-baseline gap-2.5 rounded-md bg-surface-2 px-2.5 py-2 font-mono text-[11.5px] text-ink-2"
+              >
+                <span className="shrink-0 text-[10px] font-bold text-accent">
+                  {String(i + 1).padStart(2, '0')}
+                </span>
+                <span className="break-all">{step}</span>
+              </li>
+            ))}
+          </ol>
+          <p className="mt-2 text-[11.5px] leading-snug text-ink-mut">
+            The agent chose this sequence itself. These are the same primitives the
+            deterministic cascade uses.
+          </p>
+        </>
+      )}
+
       {item.records.length > 0 && (
         <>
           <SectionTitle>Underlying records</SectionTitle>

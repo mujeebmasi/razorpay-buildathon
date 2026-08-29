@@ -18,6 +18,7 @@ import sys
 from pathlib import Path
 from typing import Sequence
 
+from finctl.config import load_dotenv
 from finctl.engine.reconcile import ReconConfig
 from finctl.models import Severity
 from finctl.money import format_inr
@@ -45,14 +46,18 @@ def _configure_console() -> None:
             pass
 
 
+def _local():
+    from finctl.adjudicate.offline import OfflineAdjudicator
+
+    return OfflineAdjudicator()
+
+
 def _build_adjudicator(kind: str):
-    """Construct the requested adjudicator, or explain why it is unavailable."""
+    """Construct an adjudicator that needs no batch. Returns None for 'none'."""
     if kind == "none":
         return None
     if kind == "local":
-        from finctl.adjudicate.offline import OfflineAdjudicator
-
-        return OfflineAdjudicator()
+        return _local()
     if kind == "claude":
         from finctl.adjudicate.claude import ClaudeAdjudicator
 
@@ -61,10 +66,31 @@ def _build_adjudicator(kind: str):
         except RuntimeError as exc:
             print(f"warning: {exc}", file=sys.stderr)
             print("warning: falling back to the local reasoner.", file=sys.stderr)
-            from finctl.adjudicate.offline import OfflineAdjudicator
-
-            return OfflineAdjudicator()
+            return _local()
     raise SystemExit(f"unknown adjudicator {kind!r}")
+
+
+def _build_agent_factory(provider: str, model: str | None, budget: int):
+    """A factory, because the agent's toolbox needs the loaded batch.
+
+    Falls back to the local reasoner rather than aborting: a missing key or an
+    unreachable host should degrade the run, not end it.
+    """
+    def factory(batch):
+        from finctl.adjudicate.agent import AgentAdjudicator
+
+        try:
+            agent = AgentAdjudicator(
+                batch, provider=provider, model=model, case_budget=budget
+            )
+        except RuntimeError as exc:
+            print(f"warning: {exc}", file=sys.stderr)
+            print("warning: falling back to the local reasoner.", file=sys.stderr)
+            return _local()
+        print(f"  agent: {agent.name} (budget {budget} cases)", file=sys.stderr)
+        return agent
+
+    return factory
 
 
 def _header(title: str) -> None:
@@ -121,6 +147,19 @@ def _print_summary(result: RunResult) -> None:
         f"{format_inr(summary['journal_credits'])} -- "
         f"{'BALANCED' if summary['journal_balances'] else 'OUT OF BALANCE'}"
     )
+
+    if agent := summary.get("agent"):
+        _header("AGENT")
+        print(f"  {summary['adjudicator']}")
+        print(f"  investigated   {agent['decided'] + agent['declined']:>5} cases "
+              f"in {agent['seconds']:.1f}s")
+        print(f"  tool calls     {agent['tool_calls']:>5}")
+        print(f"  matched        {agent['decided']:>5}")
+        print(f"  declined       {agent['declined']:>5}   <- refusing is a valid answer")
+        if agent["failed"]:
+            print(f"  failed         {agent['failed']:>5}   (degraded to abstention)")
+        print(f"  tokens         {agent['prompt_tokens']:,} in / "
+              f"{agent['completion_tokens']:,} out over {agent['requests']} requests")
 
     _header("EXCEPTIONS")
     print(
@@ -207,6 +246,7 @@ def _print_journal(result: RunResult, limit: int) -> None:
 
 def main(argv: Sequence[str] | None = None) -> int:
     _configure_console()
+    load_dotenv()
     parser = argparse.ArgumentParser(
         prog="finctl",
         description="Autonomous three-way settlement reconciliation.",
@@ -219,8 +259,21 @@ def main(argv: Sequence[str] | None = None) -> int:
     )
     parser.add_argument("--data", type=Path, default=Path("data"))
     parser.add_argument(
-        "--adjudicator", choices=["none", "local", "claude"], default="local",
-        help="who decides the residual the deterministic passes leave",
+        "--adjudicator", choices=["none", "local", "claude", "agent"], default="local",
+        help="who decides the residual: none, the offline reasoner, a single-shot "
+             "Claude call, or the tool-using agent",
+    )
+    parser.add_argument(
+        "--provider", choices=["groq", "gemini", "openai"], default="groq",
+        help="LLM host for --adjudicator agent (OpenAI-compatible schema)",
+    )
+    parser.add_argument(
+        "--model", default=None,
+        help="override the model id; discovered from the provider when omitted",
+    )
+    parser.add_argument(
+        "--agent-budget", type=int, default=40,
+        help="how many residual cases the agent may investigate",
     )
     parser.add_argument("--tolerance", type=int, default=5,
                         help="amount tolerance in paise")
@@ -242,11 +295,25 @@ def main(argv: Sequence[str] | None = None) -> int:
             f"  python -m datagen.generate --cases 900 --out {args.data}"
         )
 
-    result = run(
-        args.data,
-        config=ReconConfig(amount_tolerance=args.tolerance),
-        adjudicator=_build_adjudicator(args.adjudicator),
-    )
+    if args.adjudicator == "agent":
+        import os
+
+        model = args.model or os.environ.get(
+            f"{args.provider.upper()}_MODEL"
+        ) or None
+        result = run(
+            args.data,
+            config=ReconConfig(amount_tolerance=args.tolerance),
+            adjudicator_factory=_build_agent_factory(
+                args.provider, model, args.agent_budget
+            ),
+        )
+    else:
+        result = run(
+            args.data,
+            config=ReconConfig(amount_tolerance=args.tolerance),
+            adjudicator=_build_adjudicator(args.adjudicator),
+        )
 
     if args.command == "recon":
         _print_summary(result)

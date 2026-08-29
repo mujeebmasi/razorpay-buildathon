@@ -21,6 +21,7 @@ from pathlib import Path
 from typing import Any
 from urllib.parse import parse_qs, urlparse
 
+from finctl.config import load_dotenv
 from finctl.engine.reconcile import ReconConfig
 from finctl.models import Severity
 from finctl.money import format_inr, paise_to_rupees
@@ -77,13 +78,33 @@ class _State:
 
         return OfflineAdjudicator()
 
+    def _agent_factory(self):
+        """The agent needs the batch, so it is built after ingest.
+
+        Falls back to the offline reasoner when no key is configured, so the
+        dashboard always renders something rather than erroring.
+        """
+        def factory(batch):
+            from finctl.adjudicate.agent import AgentAdjudicator
+
+            try:
+                return AgentAdjudicator(batch, provider="groq", case_budget=25)
+            except RuntimeError:
+                from finctl.adjudicate.offline import OfflineAdjudicator
+
+                return OfflineAdjudicator()
+
+        return factory
+
     def refresh(self) -> None:
         with self.lock:
             try:
+                agent_mode = self.adjudicator_kind == "agent"
                 self.result = run(
                     self.data_dir,
                     config=ReconConfig(),
-                    adjudicator=self._adjudicator(),
+                    adjudicator=None if agent_mode else self._adjudicator(),
+                    adjudicator_factory=self._agent_factory() if agent_mode else None,
                 )
                 self.error = None
             except Exception as exc:  # surfaced in the UI rather than a stack trace
@@ -386,6 +407,11 @@ class Handler(BaseHTTPRequestHandler):
                 payload["records"] = self._related_records(
                     list(exception.subject_ids) + list(exception.candidates)
                 )
+                # What the agent actually did, if it looked at this one.
+                traces = result.agent_traces
+                payload["agent_trace"] = next(
+                    (traces[sid] for sid in exception.subject_ids if sid in traces), []
+                )
                 return payload
         return {"error": "unknown exception"}
 
@@ -495,6 +521,7 @@ class Handler(BaseHTTPRequestHandler):
 
 def serve(data_dir: Path, *, port: int = 8000, adjudicator: str = "local") -> int:
     """Run the reconciliation once, then serve the dashboard over it."""
+    load_dotenv()
     state = _State(data_dir, adjudicator)
     print(f"reconciling {data_dir} ...")
     state.refresh()

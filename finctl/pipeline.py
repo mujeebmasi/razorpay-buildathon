@@ -20,7 +20,7 @@ from __future__ import annotations
 import time
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Any
+from typing import Any, Callable
 
 from finctl.engine.reconcile import Adjudicator, ReconConfig, Reconciler, ReconResult
 from finctl.ingest.loader import Batch, load_batch, load_truth
@@ -45,6 +45,9 @@ class RunResult:
     exceptions: list[Exception_] = field(default_factory=list)
     timings: dict[str, float] = field(default_factory=dict)
     total_seconds: float = 0.0
+    #: Populated only when a tool-using agent ran.
+    agent_usage: dict[str, Any] | None = None
+    agent_traces: dict[str, list[str]] = field(default_factory=dict)
 
     # -- headline operational figures -------------------------------------
 
@@ -122,6 +125,8 @@ class RunResult:
         }
         if self.scorecard is not None:
             data["scorecard"] = self.scorecard.as_dict()
+        if self.agent_usage is not None:
+            data["agent"] = self.agent_usage
         return data
 
 
@@ -130,15 +135,24 @@ def run(
     *,
     config: ReconConfig | None = None,
     adjudicator: Adjudicator | None = None,
+    adjudicator_factory: Callable[[Batch], Adjudicator] | None = None,
     with_truth: bool = True,
 ) -> RunResult:
-    """Execute the full loop over one data directory."""
+    """Execute the full loop over one data directory.
+
+    An adjudicator may be supplied directly, or as a factory taking the loaded
+    batch. The tool-using agent needs the batch to build its investigation
+    toolbox, and it cannot exist before ingest has run.
+    """
     started = time.perf_counter()
     timings: dict[str, float] = {}
 
     stage = time.perf_counter()
     batch = load_batch(data_dir)
     timings["ingest"] = time.perf_counter() - stage
+
+    if adjudicator_factory is not None:
+        adjudicator = adjudicator_factory(batch)
 
     stage = time.perf_counter()
     recon = Reconciler(batch, config, adjudicator).run()
@@ -179,6 +193,9 @@ def run(
     exceptions.sort(key=lambda e: (e.severity.rank, -e.amount, e.exception_id))
 
     return RunResult(
+        agent_usage=getattr(adjudicator, "usage", None).as_dict()
+        if hasattr(adjudicator, "usage") else None,
+        agent_traces=dict(getattr(adjudicator, "traces", {}) or {}),
         batch=batch,
         recon=recon,
         verification=verification,

@@ -15,6 +15,12 @@ web/node_modules/
 web/.vite/
 *.tsbuildinfo
 
+# Secrets. `.env` holds real keys and is never committed; `.env.example` is a
+# placeholder-only template that is.
+.env
+.env.*
+!.env.example
+
 # Editors / OS
 .DS_Store
 .idea/

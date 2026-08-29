@@ -63,6 +63,19 @@ export interface Scorecard {
   by_difficulty: Record<string, Record<string, number>>;
 }
 
+/** Present only when a tool-using agent ran. */
+export interface AgentUsage {
+  requests: number
+  prompt_tokens: number
+  completion_tokens: number
+  tool_calls: number
+  seconds: number
+  decided: number
+  declined: number
+  failed: number
+  throttled: number
+}
+
 export interface RunSummary {
   records: number;
   seconds: number;
@@ -112,6 +125,9 @@ export interface RunSummary {
 
   /** Absent when the batch ships without held-out labels. */
   scorecard?: Scorecard;
+
+  /** Absent unless the run used `--adjudicator agent`. */
+  agent?: AgentUsage;
 }
 
 export interface ExceptionSummary {
@@ -142,6 +158,8 @@ export interface ExceptionDetail extends ExceptionSummary {
   candidates: string[];
   evidence: Evidence[];
   records: RelatedRecord[];
+  /** The tools the agent called while investigating this one, in order. */
+  agent_trace: string[];
 }
 
 export interface ExceptionPage {

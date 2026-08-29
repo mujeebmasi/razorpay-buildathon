@@ -7,7 +7,9 @@ exception register that names a reason, an owner, and a next action.
 
 Built for **Razorpay Track 04 — AI Finance Controller**.
 
-**Engine:** pure Python standard library, no runtime dependencies, 105 tests.
+**Engine:** pure Python standard library, no runtime dependencies, 127 tests.
+**Agent:** a tool-using LLM that investigates the residual the deterministic
+cascade cannot explain — and is overruled by arithmetic when it is wrong.
 **Dashboard:** React 19 + TypeScript + Tailwind CSS 4, built with Vite — and
 the build is committed, so running it still needs nothing but Python.
 
@@ -180,7 +182,7 @@ cd web && npm run build
 ```
 
 That refreshes `web/dist`, which is committed — see
-[§6.5](#65-the-frontend).
+[§6.6](#66-the-frontend).
 
 ---
 
@@ -491,7 +493,9 @@ finctl/
 
   adjudicate/
     offline.py      transparent weighted-evidence reasoner with a margin rule
-    claude.py       Anthropic Messages API on the same interface, stdlib HTTP
+    tools.py        the read-only investigation toolbox handed to the agent
+    agent.py        tool-using agent, OpenAI-compatible, stdlib HTTP
+    claude.py       Anthropic Messages API on the same interface
 
   verify/invariants.py   independent recomputation with veto power
   post/journal.py        double-entry, idempotent, balanced, no suspense plugs
@@ -509,10 +513,122 @@ web/                the dashboard - React 19, TypeScript, Tailwind 4, Vite
   src/views/        Overview, Exceptions, Matches, Journal, Scenarios
   dist/             COMMITTED build output - see below
 
-tests/              105 tests, including the API/UI seam
+tests/              127 tests, including the API/UI seam and agent containment
 ```
 
-### 6.5 The frontend
+### 6.5 The agent
+
+The deterministic cascade explains 88.7% of matches at no marginal cost. What
+survives it is genuinely hard, and that is where the agent works.
+
+It is a **tool-using agent**, not a classifier with a prompt. Given one
+unresolved payout and a fixed candidate set, it decides what to look at next:
+
+```
+get_credit          the full bank narration for a candidate
+score_reference     does the payout's reference appear in that narration?
+explain_gap         is the amount difference rounding, a 100x unit bug, or
+                    transposed digits?
+payout_components   do the payments behind this payout sum to it?
+invert_fee          could this net have come from a real payment?
+list_credits_near   what else sits in this window?
+check_contested     does ANOTHER payout fit this credit equally well?
+```
+
+Those are the cascade's own primitives. The agent gets no new powers, only the
+freedom to combine them in an order no fixed pass would — and the sequence it
+chooses is recorded as the evidence trail for its decision.
+
+Run it with:
+
+```bash
+python -m finctl recon --data data --adjudicator agent
+```
+
+Written against the **OpenAI-compatible** schema over stdlib `urllib`, so one
+adapter serves Groq (default), Gemini's compatibility endpoint, OpenAI or a
+local server. Set `GROQ_API_KEY` in `.env`; without a key the run degrades to
+the offline reasoner rather than failing.
+
+#### Containment
+
+The agent sits *outside* the trust boundary, so every way it can go wrong lands
+somewhere safe:
+
+| Failure | Result |
+|---|---|
+| Names an id it was never offered | Discarded as fabrication, before the verifier sees it |
+| Replies in prose without deciding | Not a decision, so not treated as one |
+| Investigates forever | Abstains after a turn cap |
+| Transport error, timeout, rate limit | Abstains; a failure can never become a match |
+| Confidently wrong | Verifier recomputes from source and vetoes |
+
+It never sees raw paise and never does arithmetic — tools return formatted
+amounts and pre-classified gaps. It is asked to weigh evidence, which it is good
+at, not to add up crores, which it is not.
+
+#### What `check_contested` fixed
+
+The first live run exposed a real gap. Handed a payout with no reference, the
+agent found a credit matching on amount *and* date and matched it at 0.99
+confidence. Reasonable-looking — and wrong, because a second payout of identical
+value also fitted that credit. The agent had no way to know: mutual uniqueness
+is a fact about the *payout* side, and every tool it had looked at credits.
+
+That was a missing instrument, not a bad model. With `check_contested` added,
+the same case now returns:
+
+> *"The only exact amount/date candidate is contested: another payout
+> (setl_000844) matches the same credit equally well, and there is no reference
+> to distinguish them. Hence we cannot uniquely identify the credit."*
+
+Declining. Which is correct.
+
+#### Measured, on this dataset
+
+A full run with the agent enabled, Groq serving `openai/gpt-oss-120b`:
+
+| | |
+|---|---|
+| Cases investigated | 7 |
+| Tool calls | 25 — **3.6 per case**, sequence chosen by the agent |
+| Matched | **0** |
+| Declined | **7** |
+| Failed (degraded to abstention) | 1 |
+| Wall time | 211.7s for the agent tier |
+| Tokens | 48,647 in / 6,074 out over 32 requests |
+| **False match rate** | **0.000%** — unchanged with a live LLM in the loop |
+
+**The agent resolved nothing, and that is the correct answer here.** By the time
+a case reaches it, the deterministic cascade has taken everything it can
+justify. What is left on this dataset is dominated by components of batched
+credits with no reference on either side — genuinely undecidable by picking one
+credit, which is exactly what the agent kept concluding.
+
+Two honest consequences:
+
+- **It costs 211 seconds and buys no extra matches on this data.** That is the
+  real trade, and `--adjudicator local` remains the default because of it. On
+  production data carrying payout references the residual is both smaller and
+  far more decidable, which is where an investigating agent earns its latency.
+- **The accuracy figures are identical to the deterministic run** — 96.3%
+  accuracy, 100% precision, 100% exception recall. The agent neither helped nor
+  harmed, which is the strongest available evidence that the containment works:
+  a real language model, given real tools, moved the correctness needle by
+  exactly zero in either direction.
+
+Latency is dominated by the free tier's 8,000 tokens-per-minute limit, not by
+the model — the adapter backs off on the provider's own retry hint and reports
+how often it was throttled.
+
+#### Determinism
+
+This tier is explicitly non-deterministic, unlike the rest of the engine.
+Temperature is pinned to zero and the full tool trace is recorded, so a decision
+is *auditable* even where it is not bit-reproducible. `--adjudicator local`
+remains the default and keeps the whole run deterministic.
+
+### 6.6 The frontend
 
 The dashboard is a React 19 + TypeScript + Tailwind 4 single-page app built
 with Vite. **The production build is committed to the repository**, and that is
