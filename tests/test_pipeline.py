@@ -249,3 +249,33 @@ class TestUnseenData(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class TestOperatorGuidance(unittest.TestCase):
+    """Every reason code must route to a person, not just describe a problem.
+
+    This caught a real defect: one guidance entry was written without an
+    "Owner: action" prefix, so the owner field swallowed the entire sentence
+    and the register showed the action text twice with no owner at all.
+    """
+
+    def test_every_reason_code_names_an_owner_and_an_action(self):
+        from datetime import date as _date
+
+        from finctl.models import REASON_GUIDANCE, Exception_, Source
+
+        for reason in REASON_GUIDANCE:
+            exception = Exception_.create(
+                subject_source=Source.PSP, subject_ids=["x"], reason=reason,
+                amount=0, as_of=_date(2026, 7, 1),
+            )
+            self.assertTrue(exception.owner, reason.value)
+            self.assertTrue(exception.suggested_action, reason.value)
+            # An owner is a team name. Anything long means the prefix is missing
+            # and the whole sentence has been captured as the owner.
+            self.assertLess(
+                len(exception.owner), 30,
+                f"{reason.value} has no 'Owner: action' prefix; owner reads "
+                f"{exception.owner!r}",
+            )
+            self.assertNotEqual(exception.owner, exception.suggested_action)

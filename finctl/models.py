@@ -200,7 +200,8 @@ REASON_GUIDANCE: Mapping[ReasonCode, tuple[Severity, str, str]] = {
     ReasonCode.PARTIAL_SETTLEMENT_OPEN: (
         Severity.LOW,
         "Part of this payment settled; the balance is still on hold at the PSP.",
-        "No action -- expected to clear in a later cycle. Escalate if it ages.",
+        "Finance ops: no action for now -- the balance should release in a later "
+        "cycle. Escalate if it ages beyond one.",
     ),
     ReasonCode.ADJUDICATOR_ABSTAINED: (
         Severity.MEDIUM,
