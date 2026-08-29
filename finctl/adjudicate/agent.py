@@ -425,6 +425,7 @@ class AgentAdjudicator:
         toolbox: Toolbox,
         candidate_ids: list[str],
     ) -> AdjudicationResult:
+        nudged = False
         for _ in range(self.max_turns):
             body = self._complete({
                 "model": self.model,
@@ -446,9 +447,27 @@ class AgentAdjudicator:
             calls = message.get("tool_calls") or []
 
             if not calls:
-                # The model replied in prose instead of calling the decision
-                # tool. That is not a decision, so it is not treated as one.
-                break
+                # The model answered in prose instead of calling the decision
+                # tool. Usually it has finished reasoning and simply skipped
+                # the call, so it gets one reminder -- but prose is still never
+                # parsed as a decision, and a second lapse ends the case.
+                if nudged:
+                    return AdjudicationResult(
+                        "abstain", (), 0.0,
+                        "agent replied in prose instead of submitting a decision",
+                    )
+                nudged = True
+                messages.append({
+                    "role": "assistant",
+                    "content": message.get("content") or "",
+                })
+                messages.append({
+                    "role": "user",
+                    "content": "Call submit_decision now with your conclusion. "
+                               "Declining is fine if the evidence does not single "
+                               "out one candidate.",
+                })
+                continue
 
             messages.append({
                 "role": "assistant",
@@ -477,7 +496,7 @@ class AgentAdjudicator:
         self.usage.failed += 1
         return AdjudicationResult(
             "abstain", (), 0.0,
-            f"agent did not reach a decision within {self.max_turns} turns",
+            f"agent investigated for {self.max_turns} turns without concluding",
         )
 
     def _finalise(

@@ -286,6 +286,11 @@ def main(argv: Sequence[str] | None = None) -> int:
         "--cases", type=int, default=3,
         help="how many cases the `agent` command narrates",
     )
+    parser.add_argument(
+        "--reason", default=None,
+        help="show only cases the cascade gave up on for this reason, "
+             "e.g. ambiguous_candidates",
+    )
     parser.add_argument("--json", type=Path, help="also write the summary as JSON")
     parser.add_argument("--port", type=int, default=8000)
     args = parser.parse_args(argv)
@@ -305,6 +310,7 @@ def main(argv: Sequence[str] | None = None) -> int:
             cases=args.cases,
             provider=args.provider,
             model=args.model or os.environ.get(f"{args.provider.upper()}_MODEL") or None,
+            reason=args.reason,
         )
 
     if not args.data.exists():

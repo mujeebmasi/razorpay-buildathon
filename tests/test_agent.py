@@ -122,11 +122,33 @@ class TestContainment(AgentHarness):
         self.assertIn("equally", outcome.rationale)
         self.assertEqual(agent.usage.declined, 1)
 
-    def test_prose_instead_of_a_decision_is_not_a_decision(self):
-        """The model answers in words without calling the tool."""
-        agent = self.build([_reply(content="I think it is probably the first one.")])
+    def test_prose_gets_one_reminder_then_becomes_a_decision(self):
+        """A model that answers in words has usually just skipped the tool call.
+
+        One reminder converts most of these into a real decision, so the first
+        lapse is nudged rather than abandoned. Prose is still never *parsed* as
+        a decision -- the reminder only asks it to call the tool properly.
+        """
+        agent = self.build([
+            _reply(content="I think it is probably the first one."),
+            _reply([_tool_call("submit_decision", {
+                "decision": "decline", "reasoning": "on reflection, too close",
+            })]),
+        ])
         outcome = agent.adjudicate(self.request())
         self.assertEqual(outcome.decision, "abstain")
+        self.assertIn("too close", outcome.rationale)
+        self.assertEqual(agent.usage.declined, 1)
+
+    def test_prose_twice_gives_up(self):
+        """The reminder is offered once, not indefinitely."""
+        agent = self.build([
+            _reply(content="probably the first one"),
+            _reply(content="yes, definitely the first one"),
+        ])
+        outcome = agent.adjudicate(self.request())
+        self.assertEqual(outcome.decision, "abstain")
+        self.assertIn("prose", outcome.rationale)
 
     def test_running_out_of_turns_abstains(self):
         """The model investigates forever and never concludes."""
@@ -135,7 +157,7 @@ class TestContainment(AgentHarness):
         agent = self.build([loop] * 6)
         outcome = agent.adjudicate(self.request())
         self.assertEqual(outcome.decision, "abstain")
-        self.assertIn("did not reach a decision", outcome.rationale)
+        self.assertIn("without concluding", outcome.rationale)
 
     def test_transport_failure_abstains(self):
         agent = self.build([])

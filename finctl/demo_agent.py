@@ -24,6 +24,41 @@ from finctl.pipeline import run as run_pipeline
 
 _RULE = "-" * 78
 
+#: Which unresolved cases are worth watching an agent work on, best first.
+#:
+#: "The money never arrived" is the most common outcome and the least
+#: interesting: there is nothing to weigh, so the agent declines every time. A
+#: contested credit or a suspected keying error is where two readings of the
+#: evidence are both defensible, which is the only place judgement shows.
+INTEREST: dict[str, int] = {
+    "ambiguous_candidates": 0,     # two payouts fit one credit - a coin flip
+    "amount_mismatch": 1,          # right reference, wrong amount
+    "transposition_suspected": 2,  # digits swapped by a human
+    "scale_error_suspected": 3,    # out by exactly 100x
+    "date_out_of_window": 4,       # right money, arrived far too late
+    "no_candidate": 5,
+    "missing_bank_credit": 6,      # nothing to weigh; always declined
+}
+
+#: Plain-English gloss for the reason the cascade gave up, so the demo reads
+#: to someone who does not work in settlements.
+IN_ENGLISH: dict[str, str] = {
+    "ambiguous_candidates":
+        "two different payouts fit the same credit, and nothing separates them",
+    "amount_mismatch":
+        "the reference matches but the amount is short",
+    "transposition_suspected":
+        "the amounts use the same digits in a different order",
+    "scale_error_suspected":
+        "the two amounts are out by exactly 100x",
+    "date_out_of_window":
+        "the money matches but arrived far outside the agreed window",
+    "missing_bank_credit":
+        "no matching credit was found in the bank statement at all",
+    "no_candidate":
+        "nothing in the window resembles this payout",
+}
+
 
 def _candidates_for(exception: Exception_, batch: Batch) -> list[dict]:
     """The credits the cascade considered and could not choose between."""
@@ -45,6 +80,7 @@ def demo(
     cases: int = 3,
     provider: str = "groq",
     model: str | None = None,
+    reason: str | None = None,
 ) -> int:
     """Run the cascade, then narrate the agent on what it left behind."""
     from finctl.adjudicate.agent import AgentAdjudicator
@@ -70,9 +106,20 @@ def demo(
         print("\nnothing left ambiguous enough to need an agent.")
         return 0
 
-    # Highest value first: if only a few cases are being shown, show the ones
-    # that would actually matter to a finance team.
-    open_cases.sort(key=lambda e: -e.amount)
+    if reason:
+        open_cases = [e for e in open_cases if e.reason.value == reason]
+        if not open_cases:
+            print(f"\nno unresolved cases with reason {reason!r}.")
+            print(f"available: {', '.join(sorted(INTEREST))}")
+            return 1
+
+    # Rank by how much judgement the case actually needs, not by value.
+    #
+    # Sorting by amount surfaces "the money never arrived" every time, because
+    # those are the largest -- and the answer there is always the same. The
+    # cases worth watching an agent on are the ones where two readings of the
+    # evidence are both defensible. Value breaks ties within a band.
+    open_cases.sort(key=lambda e: (INTEREST.get(e.reason.value, 99), -e.amount))
     selected = open_cases[:cases]
 
     try:
@@ -84,7 +131,7 @@ def demo(
         return 1
 
     print(f"\nagent: {agent.name}")
-    print(f"handing it the {len(selected)} highest-value unresolved case(s).\n")
+    print(f"handing it the {len(selected)} case(s) needing the most judgement.\n")
 
     for index, exception in enumerate(selected, start=1):
         settlement_id = next(
@@ -99,7 +146,10 @@ def demo(
         print(f"CASE {index}/{len(selected)}   {settlement_id}")
         print(f"  payout    {format_inr(settlement.amount)}  {settlement.settled_on}")
         print(f"  reference {settlement.utr or 'none on file'}")
-        print(f"  cascade   gave up with: {exception.reason.value}")
+        gloss = IN_ENGLISH.get(exception.reason.value, "")
+        print(f"  cascade   gave up: {exception.reason.value}")
+        if gloss:
+            print(f"            ({gloss})")
         print(f"  offered   {len(candidates)} candidate credit(s)")
         print()
 
