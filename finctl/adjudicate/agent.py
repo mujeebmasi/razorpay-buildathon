@@ -46,6 +46,15 @@ from finctl.models import Evidence
 from finctl.money import format_inr
 
 
+class WouldNotDecide(RuntimeError):
+    """The host refused the request because the model ignored a required tool.
+
+    Providers enforce `tool_choice` server-side, so a model that will not call
+    the function comes back as a 400 rather than as a message. It means the
+    same thing as prose in place of a decision, and is handled the same way.
+    """
+
+
 class RateLimited(RuntimeError):
     """The host asked us to slow down, and said for how long."""
 
@@ -97,7 +106,15 @@ PROVIDERS: Final[dict[str, Provider]] = {
         name="groq",
         base_url="https://api.groq.com/openai/v1",
         key_env="GROQ_API_KEY",
-        prefer=("llama-3.3-70b", "llama-3.1-70b", "70b", "llama-4", "qwen", "kimi", "gpt-oss"),
+        # Ordered by measured tool-calling reliability on this task, not by
+        # size. Compared on the same contested case: qwen3.8 decided every run
+        # and reached the right answer; gpt-oss-120b was intermittent, refusing
+        # to call the decision tool about half the time; gpt-oss-20b decided
+        # reliably and decided *wrong*, matching a credit two payouts claim
+        # equally -- an error the verifier cannot catch, because the amounts
+        # balance perfectly and only the uniqueness rule is violated.
+        prefer=("qwen3.8", "qwen3", "qwen", "llama-3.3-70b", "70b", "gpt-oss-120b",
+                "gpt-oss"),
     ),
     "gemini": Provider(
         name="gemini",
@@ -307,6 +324,8 @@ class AgentAdjudicator:
                 message = exc.reason
             if exc.code == 429:
                 raise RateLimited(message, retry_after=_retry_hint(exc, message)) from exc
+            if exc.code == 400 and "did not call a tool" in message.lower():
+                raise WouldNotDecide(message) from exc
             raise RuntimeError(f"{self.provider.name} HTTP {exc.code}: {message}") from exc
 
     def _complete(self, payload: dict, attempts: int = 3) -> dict:
@@ -403,6 +422,12 @@ class AgentAdjudicator:
             outcome = AdjudicationResult(
                 "abstain", (), 0.0,
                 f"agent unreachable ({type(exc).__name__}); left for manual review",
+            )
+        except WouldNotDecide:
+            self.usage.failed += 1
+            outcome = AdjudicationResult(
+                "abstain", (), 0.0,
+                "agent would not submit a decision even when required to",
             )
         except RuntimeError as exc:
             self.usage.failed += 1
