@@ -10,12 +10,14 @@ export default defineConfig({
   build: {
     outDir: 'dist',
     emptyOutDir: true,
-    // Hashless names keep the committed diff readable across rebuilds.
+    // Content-hashed names, because the deploy serves /assets/* as `immutable`.
+    // With a fixed filename that header is a lie: a returning visitor keeps the
+    // bundle they first downloaded for a year, and never sees a new build.
     rollupOptions: {
       output: {
-        entryFileNames: 'assets/app.js',
-        chunkFileNames: 'assets/[name].js',
-        assetFileNames: 'assets/[name][extname]',
+        entryFileNames: 'assets/app-[hash].js',
+        chunkFileNames: 'assets/[name]-[hash].js',
+        assetFileNames: 'assets/[name]-[hash][extname]',
       },
     },
   },
