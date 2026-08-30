@@ -130,6 +130,54 @@ export interface RunSummary {
   agent?: AgentUsage;
 }
 
+/** One tool the agent may call while investigating. */
+export interface AgentTool {
+  name: string;
+  description: string;
+}
+
+/** One step of an investigation: what was called, and what came back. */
+export interface AgentStep {
+  tool: string;
+  arguments: Record<string, unknown>;
+  result: string;
+}
+
+/** One case the agent worked, start to finish. */
+export interface AgentCase {
+  settlement_id: string;
+  reason: string;
+  reason_in_english: string;
+  payout_amount: string;
+  payout_date: string;
+  reference: string | null;
+  candidate_count: number;
+  candidates: Array<{ line_id: string; amount: string; date: string }>;
+  steps: AgentStep[];
+  decision: 'match' | 'decline';
+  chosen: string | null;
+  confidence: number;
+  reasoning: string;
+  /** What the verifier did with the proposal. Only runs on a match. */
+  verifier: {
+    ran: boolean;
+    accepted?: boolean;
+    violations?: Array<{ invariant: string; detail: string }>;
+  };
+}
+
+export interface AgentPayload {
+  /** `live` ran just now; `recorded` replays a committed real run. */
+  mode: 'live' | 'recorded' | 'unavailable';
+  provider?: string;
+  model?: string;
+  recorded_at?: string;
+  usage: Partial<AgentUsage>;
+  tools: AgentTool[];
+  cases: AgentCase[];
+  note: string;
+}
+
 export interface ExceptionSummary {
   id: string;
   reason: string;
@@ -244,6 +292,7 @@ export interface ScenarioPayload {
 
 export type ViewName =
   | 'overview'
+  | 'agent'
   | 'exceptions'
   | 'matches'
   | 'journal'

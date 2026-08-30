@@ -254,10 +254,11 @@ def main(argv: Sequence[str] | None = None) -> int:
     )
     parser.add_argument(
         "command",
-        choices=["recon", "exceptions", "journal", "serve", "agent"],
+        choices=["recon", "exceptions", "journal", "serve", "agent", "capture"],
         help="recon: full run with scorecard. exceptions: the open register. "
              "journal: trial balance and entries. serve: the dashboard. "
-             "agent: watch the agent investigate a few cases, live.",
+             "agent: watch the agent investigate a few cases, live. "
+             "capture: record real agent runs so they can be shown without a key.",
     )
     parser.add_argument("--data", type=Path, default=Path("data"))
     parser.add_argument(
@@ -287,6 +288,10 @@ def main(argv: Sequence[str] | None = None) -> int:
         help="how many cases the `agent` command narrates",
     )
     parser.add_argument(
+        "--per-reason", type=int, default=2,
+        help="how many cases of each kind `capture` records",
+    )
+    parser.add_argument(
         "--reason", default=None,
         help="show only cases the cascade gave up on for this reason, "
              "e.g. ambiguous_candidates",
@@ -299,6 +304,18 @@ def main(argv: Sequence[str] | None = None) -> int:
         from server.app import serve
 
         return serve(args.data, port=args.port, adjudicator=args.adjudicator)
+
+    if args.command == "capture":
+        import os
+
+        from finctl.capture_agent import capture
+
+        return capture(
+            args.data,
+            per_reason=args.per_reason,
+            provider=args.provider,
+            model=args.model or os.environ.get(f"{args.provider.upper()}_MODEL") or None,
+        )
 
     if args.command == "agent":
         import os

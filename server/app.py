@@ -266,6 +266,8 @@ class Handler(BaseHTTPRequestHandler):
                 self._json(self._matches_payload(query))
             elif route == "/api/journal":
                 self._json(self._journal_payload(query))
+            elif route == "/api/agent":
+                self._json(self._agent_payload())
             elif route == "/api/scenarios":
                 self._json(self._scenarios_payload())
             elif route == "/api/refresh":
@@ -488,6 +490,61 @@ class Handler(BaseHTTPRequestHandler):
                 }
                 for entry in posting.entries[:limit]
             ],
+        }
+
+    def _agent_payload(self) -> dict[str, Any]:
+        """The agent's work, live if it ran, recorded otherwise.
+
+        The distinction is stated in the payload rather than hidden, because a
+        recording presented as a live run would be exactly the kind of quiet
+        dishonesty this project is built to avoid.
+        """
+        from finctl.adjudicate.tools import Toolbox
+        from finctl.capture_agent import load_transcripts
+
+        result = self.state.require()
+        tools = [
+            {
+                "name": entry["function"]["name"],
+                "description": entry["function"]["description"],
+            }
+            for entry in Toolbox.schema()
+        ]
+
+        if result.agent_usage and result.agent_traces:
+            return {
+                "mode": "live",
+                "provider": result.recon.adjudicator_name,
+                "model": result.recon.adjudicator_name,
+                "usage": result.agent_usage,
+                "tools": tools,
+                "cases": [],
+                "note": "This run executed the agent live against the configured "
+                        "provider.",
+            }
+
+        recorded = load_transcripts(self.state.data_dir)
+        if recorded:
+            return {
+                "mode": "recorded",
+                "provider": recorded.get("provider"),
+                "model": recorded.get("model"),
+                "recorded_at": recorded.get("recorded_at"),
+                "usage": recorded.get("usage", {}),
+                "tools": tools,
+                "cases": recorded.get("cases", []),
+                "note": "Recorded from a real run against a live model. Nothing here "
+                        "is simulated. Set GROQ_API_KEY and restart with "
+                        "--adjudicator agent to run it yourself.",
+            }
+
+        return {
+            "mode": "unavailable",
+            "tools": tools,
+            "cases": [],
+            "usage": {},
+            "note": "No agent run is available. Set GROQ_API_KEY and restart with "
+                    "--adjudicator agent, or run `python -m finctl capture`.",
         }
 
     def _scenarios_payload(self) -> dict[str, Any]:

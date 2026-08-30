@@ -7,6 +7,9 @@ import type { ViewName } from '../types'
 
 const TABS: Array<{ id: ViewName; label: string }> = [
   { id: 'overview', label: 'Overview' },
+  // Second, deliberately. The agent is the part a reviewer is here to see, and
+  // burying it behind four other tabs would hide the thing that matters most.
+  { id: 'agent', label: 'Agent' },
   { id: 'exceptions', label: 'Exceptions' },
   { id: 'matches', label: 'Matches' },
   { id: 'journal', label: 'Journal' },

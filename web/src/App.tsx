@@ -5,16 +5,26 @@ import { useAsync } from './hooks/useAsync'
 import { useTheme } from './hooks/useTheme'
 import { AppBar } from './components/AppBar'
 import { KpiRow, KpiSkeleton } from './components/KpiRow'
-import { Skeleton } from './components/primitives'
+import { Skeleton, SkeletonRows } from './components/primitives'
 import { useToast } from './components/Toast'
 import { Overview } from './views/Overview'
+import { Agent } from './views/Agent'
 import { Exceptions } from './views/Exceptions'
 import { Matches } from './views/Matches'
 import { Journal } from './views/Journal'
 import { Scenarios } from './views/Scenarios'
 import type { ViewName } from './types'
 
-const VIEW_ORDER: ViewName[] = ['overview', 'exceptions', 'matches', 'journal', 'scenarios']
+const VIEW_ORDER: ViewName[] = ['overview', 'agent', 'exceptions', 'matches', 'journal', 'scenarios']
+
+/** Loads the agent payload on demand, so the tab costs nothing until opened. */
+function AgentView() {
+  const { data, error, loading } = useAsync((signal) => api.agent(signal), [])
+  if (loading) return <SkeletonRows count={5} />
+  if (error) return <p className="text-[13px] text-crit">{error}</p>
+  if (!data) return null
+  return <Agent data={data} />
+}
 
 export function App() {
   const { theme, toggle } = useTheme()
@@ -168,6 +178,7 @@ export function App() {
                   registerNav={registerNav}
                 />
               )}
+              {view === 'agent' && <AgentView />}
               {view === 'matches' && <Matches tiers={tiers} />}
               {view === 'journal' && <Journal />}
               {view === 'scenarios' && <Scenarios />}

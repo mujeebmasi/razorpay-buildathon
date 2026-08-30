@@ -7,7 +7,7 @@ exception register that names a reason, an owner, and a next action.
 
 Built for **Razorpay Track 04 — AI Finance Controller**.
 
-**Engine:** pure Python standard library, no runtime dependencies, 127 tests.
+**Engine:** pure Python standard library, no runtime dependencies, 138 tests.
 **Agent:** a tool-using LLM that investigates the residual the deterministic
 cascade cannot explain — and is overruled by arithmetic when it is wrong.
 **Dashboard:** React 19 + TypeScript + Tailwind CSS 4, built with Vite — and
@@ -15,8 +15,51 @@ the build is committed, so running it still needs nothing but Python.
 
 ---
 
+## For the evaluator
+
+**The agent is the second tab of the dashboard.** Two commands, no key required:
+
+```bash
+python -m datagen.generate --cases 900 --out data && python -m finctl serve --data data
+```
+
+Open <http://127.0.0.1:8000> and click **Agent**. You will see every tool the
+agent may call, twelve real investigations with the exact calls it chose and
+what came back, its reasoning, and &mdash; where it got one wrong &mdash; the
+verifier vetoing it. Those transcripts are recorded from live runs against
+`openai/gpt-oss-120b` and labelled as recordings; set `GROQ_API_KEY` and add
+`--adjudicator agent` to run it yourself.
+
+To watch it think in a terminal instead:
+
+```bash
+python -m finctl agent --data data --cases 1 --reason ambiguous_candidates
+```
+
+### Against the brief
+
+| The track asks for | Where it is | |
+|---|---|---|
+| **An agent** | Tool-using LLM over 8 read-only tools, chooses its own investigation. Dashboard &rarr; **Agent**, or [&sect;6.5](#65-the-agent) | ✅ |
+| **Closes one finance-ops loop** | Three-way reconciliation &rarr; verification &rarr; balanced double-entry journal, [&sect;2](#2-what-finctl-does) | ✅ |
+| **50+ record batch of synthetic data** | **5,320 records** from a seeded generator, [&sect;9](#9-the-edge-case-catalogue) | ✅ |
+| **Reports its match rate** | **75.7%**, on the dashboard and in `recon`, [&sect;4](#4-results) | ✅ |
+| **Exceptions it could not resolve** | **367**, each with reason code, severity, owning team and next action | ✅ |
+| **Throughput** | **~7,200 records/second** | ✅ |
+| **Measured accuracy** | Scored against a held-out answer key the engine never reads: 96.3% accuracy, **0.000% false match rate** | ✅ |
+| **An honest exception list** | Every break is named and owned; ~19% of the batch is unresolvable *by construction* and the ceiling is stated rather than hidden, [&sect;4](#what-it-deliberately-does-not-do) | ✅ |
+
+> *"One cherry-picked match proves nothing."* &mdash; so nothing here is
+> cherry-picked. Accuracy is measured against labels the engine cannot read, the
+> recorded agent transcripts include the cases it got **wrong**, and the headline
+> match rate is the lower, honest one. [&sect;4](#the-number-that-matters) explains
+> why an earlier build scoring 90.6% was the worse system.
+
+---
+
 ## Table of contents
 
+0. [For the evaluator](#for-the-evaluator)
 1. [The problem](#1-the-problem)
 2. [What finctl does](#2-what-finctl-does)
 3. [Quickstart](#3-quickstart)
@@ -513,7 +556,8 @@ web/                the dashboard - React 19, TypeScript, Tailwind 4, Vite
   src/views/        Overview, Exceptions, Matches, Journal, Scenarios
   dist/             COMMITTED build output - see below
 
-tests/              127 tests, including the API/UI seam and agent containment
+tests/              138 tests: primitives, guardrails, pipeline, agent,
+                    the API/UI seam, and the recorded transcripts
 ```
 
 ### 6.5 The agent

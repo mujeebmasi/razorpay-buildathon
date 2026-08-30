@@ -162,7 +162,10 @@ class Toolbox:
             result = json.dumps({"error": f"no such tool: {name}"})
         else:
             try:
-                result = json.dumps(handler(**arguments), default=str)
+                # ensure_ascii=False so the rupee sign reaches the model and
+                # the dashboard as itself, not as an escape sequence.
+                result = json.dumps(handler(**arguments), default=str,
+                                    ensure_ascii=False)
             except TypeError as exc:
                 result = json.dumps({"error": f"bad arguments for {name}: {exc}"})
             except Exception as exc:  # a tool fault must not kill the run

@@ -265,6 +265,10 @@ class AgentAdjudicator:
         self.usage = AgentUsage()
         #: subject id -> the tool calls the agent made, for the evidence trail
         self.traces: dict[str, list[str]] = {}
+        #: subject id -> the full investigation: every call, its arguments, and
+        #: what came back. Kept so a run can be recorded and replayed for
+        #: someone without an API key, and so a decision stays auditable.
+        self.transcripts: dict[str, list[dict[str, Any]]] = {}
 
     # -- transport ---------------------------------------------------------
 
@@ -415,6 +419,14 @@ class AgentAdjudicator:
             self.usage.seconds += time.perf_counter() - started
 
         self.traces[request.subject_id] = [c.summary() for c in toolbox.calls]
+        self.transcripts[request.subject_id] = [
+            {
+                "tool": call.name,
+                "arguments": dict(call.arguments),
+                "result": call.result,
+            }
+            for call in toolbox.calls
+        ]
         self.usage.tool_calls += len(toolbox.calls)
         return outcome
 

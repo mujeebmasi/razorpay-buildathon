@@ -1,5 +1,6 @@
 /** Typed fetch layer. Every endpoint the dashboard uses, in one place. */
 import type {
+  AgentPayload,
   ExceptionDetail, ExceptionPage, JournalPayload, MatchPage,
   RunSummary, ScenarioPayload, Severity,
 } from '../types'
@@ -34,6 +35,8 @@ export const api = {
     get<MatchPage>(`/api/matches?tier=${encodeURIComponent(tier)}&detail=1&limit=150`, signal),
 
   journal: (signal?: AbortSignal) => get<JournalPayload>('/api/journal?limit=25', signal),
+
+  agent: (signal?: AbortSignal) => get<AgentPayload>('/api/agent', signal),
 
   scenarios: (signal?: AbortSignal) => get<ScenarioPayload>('/api/scenarios', signal),
 
