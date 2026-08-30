@@ -7,7 +7,7 @@ exception register that names a reason, an owner, and a next action.
 
 Built for **Razorpay Track 04 — AI Finance Controller**.
 
-**Engine:** pure Python standard library, no runtime dependencies, 138 tests.
+**Engine:** pure Python standard library, no runtime dependencies, 147 tests.
 **Agent:** a tool-using LLM that investigates the residual the deterministic
 cascade cannot explain — and is overruled by arithmetic when it is wrong.
 **Dashboard:** React 19 + TypeScript + Tailwind CSS 4, built with Vite — and
@@ -29,6 +29,11 @@ what came back, its reasoning, and &mdash; where it got one wrong &mdash; the
 verifier vetoing it. Those transcripts are recorded from live runs against
 `openai/gpt-oss-120b` and labelled as recordings; set `GROQ_API_KEY` and add
 `--adjudicator agent` to run it yourself.
+
+**Or just open the hosted dashboard** — same build, no install at all. The
+engine's output is frozen to JSON at build time and the page filters it in the
+browser, so there is no backend to cold-start and nothing to go wrong on demo
+day.
 
 To watch it think in a terminal instead:
 
@@ -225,7 +230,7 @@ cd web && npm run build
 ```
 
 That refreshes `web/dist`, which is committed — see
-[§6.6](#66-the-frontend).
+[§6.7](#67-the-frontend).
 
 ---
 
@@ -556,8 +561,9 @@ web/                the dashboard - React 19, TypeScript, Tailwind 4, Vite
   src/views/        Overview, Exceptions, Matches, Journal, Scenarios
   dist/             COMMITTED build output - see below
 
-tests/              138 tests: primitives, guardrails, pipeline, agent,
-                    the API/UI seam, and the recorded transcripts
+tests/              147 tests: primitives, guardrails, pipeline, agent,
+                    the API/UI seam, the recorded transcripts, and the
+                    static snapshot the hosted build reads
 ```
 
 ### 6.5 The agent
@@ -721,7 +727,40 @@ Temperature is pinned to zero and the full tool trace is recorded, so a decision
 is *auditable* even where it is not bit-reproducible. `--adjudicator local`
 remains the default and keeps the whole run deterministic.
 
-### 6.6 The frontend
+### 6.6 Hosting it as static files
+
+The dashboard runs two ways from **one build**, and the mode is detected at
+runtime rather than baked in, so there is no way to deploy the wrong variant.
+
+| Served by | Data comes from | Filtering happens |
+|---|---|---|
+| `python -m finctl serve` | the live Python API | on the server |
+| any static host | JSON snapshots in `data/` | in the browser |
+
+`python -m finctl export` freezes a run to six JSON files that mirror the API's
+routes. The client probes `/api/run` once; if there is no API, it loads the
+snapshots and applies the same severity, reason and search filters client-side.
+Filtering 367 exceptions in the browser is instant, and it removes an entire
+tier of infrastructure.
+
+Porting the API to serverless functions was the obvious alternative and the
+wrong one. A reconciliation run reads a fixed set of files and produces a fixed
+result; making it dynamic would mean re-running the whole cascade per request,
+or bolting a cache onto something that had no reason to be dynamic — and adding
+cold starts to a demo.
+
+```bash
+python -m finctl export --data data --out web/public/data
+cd web && npm run build          # snapshot is copied into dist/
+```
+
+Both the snapshot and `web/dist` are committed, so deploying needs neither
+Python nor a build step. `tests/test_export.py` asserts the snapshot carries
+every field the live API does and still describes the batch it was made from —
+a missing key would render an empty card rather than an error, which is exactly
+the kind of silent wrongness this project refuses elsewhere.
+
+### 6.7 The frontend
 
 The dashboard is a React 19 + TypeScript + Tailwind 4 single-page app built
 with Vite. **The production build is committed to the repository**, and that is

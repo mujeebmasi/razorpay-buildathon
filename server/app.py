@@ -169,6 +169,65 @@ def _match_payload(match, *, detailed: bool = False) -> dict[str, Any]:
     return payload
 
 
+def daily_series(result: RunResult) -> list[dict[str, Any]]:
+    """Matched vs unresolved value per settlement date.
+
+    Reconciliation is a daily rhythm, and a break usually clusters on one
+    day rather than spreading evenly -- a feed that failed, a batch that did
+    not decompose. A per-day series makes that shape visible in a way the
+    totals never can.
+    """
+    matched: dict[str, int] = {}
+    broken: dict[str, int] = {}
+
+    settlements = result.batch.index_settlements()
+    for match in result.matches:
+        for settlement_id in match.settlement_ids:
+            if settlement := settlements.get(settlement_id):
+                key = settlement.settled_on.isoformat()
+                matched[key] = matched.get(key, 0) + settlement.amount
+    for exception in result.exceptions:
+        key = exception.as_of.isoformat()
+        broken[key] = broken.get(key, 0) + exception.amount
+
+    days = sorted(set(matched) | set(broken))
+    return [
+        {
+            "date": day,
+            "matched": matched.get(day, 0),
+            "broken": broken.get(day, 0),
+            "matched_display": format_inr(matched.get(day, 0)),
+            "broken_display": format_inr(broken.get(day, 0)),
+        }
+        for day in days
+    ]
+
+def exposure_by_reason(result: RunResult) -> list[dict[str, Any]]:
+    """Value at risk grouped by reason, worst first.
+
+    Counting breaks treats a one-rupee rounding query the same as a five
+    lakh double-post. Ranking by money is what tells an operator where to
+    start.
+    """
+    totals: dict[str, dict[str, Any]] = {}
+    for exception in result.exceptions:
+        entry = totals.setdefault(
+            exception.reason.value,
+            {"reason": exception.reason.value, "count": 0, "amount": 0,
+             "severity": exception.severity.value},
+        )
+        entry["count"] += 1
+        entry["amount"] += exception.amount
+        # Keep the worst severity seen for this reason.
+        if Severity(exception.severity.value).rank < Severity(entry["severity"]).rank:
+            entry["severity"] = exception.severity.value
+
+    rows = sorted(totals.values(), key=lambda r: -r["amount"])
+    for row in rows:
+        row["amount_display"] = format_inr(row["amount"])
+    return rows
+
+
 class Handler(BaseHTTPRequestHandler):
     """Routes the handful of endpoints the dashboard needs."""
 
@@ -299,68 +358,9 @@ class Handler(BaseHTTPRequestHandler):
              "adjudicated": v.adjudicated}
             for v in result.verification.violations[:6]
         ]
-        summary["daily"] = self._daily_series()
-        summary["exposure_by_reason"] = self._exposure_by_reason()
+        summary["daily"] = daily_series(result)
+        summary["exposure_by_reason"] = exposure_by_reason(result)
         return summary
-
-    def _daily_series(self) -> list[dict[str, Any]]:
-        """Matched vs unresolved value per settlement date.
-
-        Reconciliation is a daily rhythm, and a break usually clusters on one
-        day rather than spreading evenly -- a feed that failed, a batch that did
-        not decompose. A per-day series makes that shape visible in a way the
-        totals never can.
-        """
-        matched: dict[str, int] = {}
-        broken: dict[str, int] = {}
-        result = self.state.require()
-
-        settlements = result.batch.index_settlements()
-        for match in result.matches:
-            for settlement_id in match.settlement_ids:
-                if settlement := settlements.get(settlement_id):
-                    key = settlement.settled_on.isoformat()
-                    matched[key] = matched.get(key, 0) + settlement.amount
-        for exception in result.exceptions:
-            key = exception.as_of.isoformat()
-            broken[key] = broken.get(key, 0) + exception.amount
-
-        days = sorted(set(matched) | set(broken))
-        return [
-            {
-                "date": day,
-                "matched": matched.get(day, 0),
-                "broken": broken.get(day, 0),
-                "matched_display": format_inr(matched.get(day, 0)),
-                "broken_display": format_inr(broken.get(day, 0)),
-            }
-            for day in days
-        ]
-
-    def _exposure_by_reason(self) -> list[dict[str, Any]]:
-        """Value at risk grouped by reason, worst first.
-
-        Counting breaks treats a one-rupee rounding query the same as a five
-        lakh double-post. Ranking by money is what tells an operator where to
-        start.
-        """
-        totals: dict[str, dict[str, Any]] = {}
-        for exception in self.state.require().exceptions:
-            entry = totals.setdefault(
-                exception.reason.value,
-                {"reason": exception.reason.value, "count": 0, "amount": 0,
-                 "severity": exception.severity.value},
-            )
-            entry["count"] += 1
-            entry["amount"] += exception.amount
-            # Keep the worst severity seen for this reason.
-            if Severity(exception.severity.value).rank < Severity(entry["severity"]).rank:
-                entry["severity"] = exception.severity.value
-
-        rows = sorted(totals.values(), key=lambda r: -r["amount"])
-        for row in rows:
-            row["amount_display"] = format_inr(row["amount"])
-        return rows
 
     def _exceptions_payload(self, query: dict[str, list[str]]) -> dict[str, Any]:
         result = self.state.require()

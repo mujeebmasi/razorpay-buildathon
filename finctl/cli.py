@@ -254,11 +254,12 @@ def main(argv: Sequence[str] | None = None) -> int:
     )
     parser.add_argument(
         "command",
-        choices=["recon", "exceptions", "journal", "serve", "agent", "capture"],
+        choices=["recon", "exceptions", "journal", "serve", "agent", "capture", "export"],
         help="recon: full run with scorecard. exceptions: the open register. "
              "journal: trial balance and entries. serve: the dashboard. "
              "agent: watch the agent investigate a few cases, live. "
-             "capture: record real agent runs so they can be shown without a key.",
+             "capture: record real agent runs so they can be shown without a key. "
+             "export: freeze a run to JSON for static hosting.",
     )
     parser.add_argument("--data", type=Path, default=Path("data"))
     parser.add_argument(
@@ -296,6 +297,10 @@ def main(argv: Sequence[str] | None = None) -> int:
         help="show only cases the cascade gave up on for this reason, "
              "e.g. ambiguous_candidates",
     )
+    parser.add_argument(
+        "--out", type=Path, default=Path("web/public/data"),
+        help="where `export` writes its JSON snapshots",
+    )
     parser.add_argument("--json", type=Path, help="also write the summary as JSON")
     parser.add_argument("--port", type=int, default=8000)
     args = parser.parse_args(argv)
@@ -304,6 +309,11 @@ def main(argv: Sequence[str] | None = None) -> int:
         from server.app import serve
 
         return serve(args.data, port=args.port, adjudicator=args.adjudicator)
+
+    if args.command == "export":
+        from finctl.export_static import export
+
+        return export(args.data, args.out)
 
     if args.command == "capture":
         import os
