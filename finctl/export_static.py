@@ -228,7 +228,12 @@ def export(data_dir: Path, out_dir: Path) -> int:
     summary["fee_recovery_display"] = format_inr(
         result.recon.counters.get("fee_overcharge_paise", 0)
     )
-    summary["adjudicator_kind"] = "deterministic cascade (static export)"
+    # The export runs the deterministic cascade with no adjudicator tier, so
+    # `adjudicator_name` is literally "none". Rendered in the header badge that
+    # reads as "nothing is running here", on a page whose second tab is the
+    # agent -- so it says what actually produced this run instead.
+    summary["adjudicator"] = "deterministic cascade"
+    summary["adjudicator_kind"] = "static snapshot; agent transcripts recorded"
     summary["violations"] = result.verification.violations_by_invariant()
     summary["rejected_examples"] = [
         {"match": v.match_id, "invariant": v.invariant.value,
