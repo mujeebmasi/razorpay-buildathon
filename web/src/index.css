@@ -11,71 +11,89 @@
    class swapping anywhere in the components.
    ═════════════════════════════════════════════════════════════════ */
 
-:root,
-:root[data-theme="dark"] {
-  --bg: #0a0c10;
-  --bg-elev: #11141b;
-  --surface: #151922;
-  --surface-2: #1b202b;
-  --surface-3: #222836;
-  --line: #262d3b;
-  --line-soft: #1d2330;
+/* ═══════════════════════════════════════════ continuous-feed ledger ══
+   The palette is taken from the material this job actually produced for
+   forty years: green-bar fanfold paper. Alternating pale bands are not
+   decoration -- they exist because the eye loses its place crossing a wide
+   row of figures, which is exactly what an exception register is.
 
-  --ink: #e9edf5;
-  --ink-2: #9aa5b8;
-  --ink-mut: #667186;
+   Light is the primary theme. Reconciliation is paperwork, and paperwork is
+   dark ink on a pale sheet; a glowing dark dashboard is the wrong metaphor
+   for a document you are meant to check line by line.
 
-  --accent: #5b93ff;
-  --accent-2: #3a6fdb;
-  --accent-soft: #5b93ff1f;
+   Red is reserved. It means a debit or a break, the way red ink always has
+   in a ledger, and it appears nowhere else.
+   ═════════════════════════════════════════════════════════════════════ */
 
-  --ok: #33c48c;
-  --ok-soft: #33c48c1c;
-  --warn: #e9b53f;
-  --warn-soft: #e9b53f1c;
-  --high: #f28744;
-  --high-soft: #f287441c;
-  --crit: #f2564f;
-  --crit-soft: #f2564f1c;
-  --info: #7c8798;
+:root {
+  --bg: #e6e9e2;          /* the desk the sheet sits on */
+  --bg-elev: #f6f7f3;
+  --surface: #f7f8f4;     /* the printed sheet */
+  --surface-2: #dfe8dc;  /* the green bar */
+  --surface-3: #d3ded0;
+  --line: #b9c2b4;
+  --line-soft: #d2d9cd;
+  --rule: #171a15;        /* the heavy rule a printed form uses */
 
-  --scrim: rgb(0 0 0 / 0.55);
-  --shadow-1: 0 1px 2px rgb(0 0 0 / 0.4);
-  --shadow-2: 0 4px 16px rgb(0 0 0 / 0.34);
-  --shadow-3: 0 18px 48px rgb(0 0 0 / 0.5);
+  --ink: #14170f;
+  --ink-2: #454c3e;
+  --ink-mut: #6e7566;
+
+  --accent: #1c5c3b;      /* ledger green, in credit */
+  --accent-2: #134a2e;
+  --accent-soft: #1c5c3b16;
+
+  --ok: #1c5c3b;
+  --ok-soft: #1c5c3b16;
+  --warn: #8a5a0e;
+  --warn-soft: #8a5a0e16;
+  --high: #a8511a;
+  --high-soft: #a8511a16;
+  --crit: #a32b22;        /* ledger red, in debit */
+  --crit-soft: #a32b2214;
+  --info: #5f6a59;
+
+  --band: #e3ebe0;        /* the alternating stripe */
+  --scrim: rgb(20 23 15 / 0.38);
+  --shadow-1: 0 1px 0 rgb(20 23 15 / 0.10);
+  --shadow-2: 0 1px 0 rgb(20 23 15 / 0.14);
+  --shadow-3: 0 8px 28px rgb(20 23 15 / 0.20);
 }
 
-:root[data-theme="light"] {
-  --bg: #f5f7fa;
-  --bg-elev: #ffffff;
-  --surface: #ffffff;
-  --surface-2: #f2f5f9;
-  --surface-3: #e7ecf3;
-  --line: #dde3ec;
-  --line-soft: #e9eef4;
+/* The same sheet under a desk lamp at night: the bands survive, inverted. */
+:root[data-theme="dark"] {
+  --bg: #0c0f0a;
+  --bg-elev: #12160f;
+  --surface: #131810;
+  --surface-2: #1a2016;
+  --surface-3: #232b1e;
+  --line: #2e3728;
+  --line-soft: #1f271b;
+  --rule: #cdd6c4;
 
-  --ink: #10151d;
-  --ink-2: #4a5567;
-  --ink-mut: #78849a;
+  --ink: #e7ecdf;
+  --ink-2: #a3ad98;
+  --ink-mut: #77816d;
 
-  --accent: #2a63d8;
-  --accent-2: #1f4db0;
-  --accent-soft: #2a63d814;
+  --accent: #5cbd85;
+  --accent-2: #3f9a67;
+  --accent-soft: #5cbd851c;
 
-  --ok: #16875a;
-  --ok-soft: #16875a14;
-  --warn: #a97708;
-  --warn-soft: #a9770814;
-  --high: #c25a15;
-  --high-soft: #c25a1514;
-  --crit: #cf2f28;
-  --crit-soft: #cf2f2814;
-  --info: #6b7686;
+  --ok: #5cbd85;
+  --ok-soft: #5cbd851c;
+  --warn: #d5a244;
+  --warn-soft: #d5a2441c;
+  --high: #e0854a;
+  --high-soft: #e0854a1c;
+  --crit: #e4685c;
+  --crit-soft: #e4685c1c;
+  --info: #8b9482;
 
-  --scrim: rgb(16 21 29 / 0.4);
-  --shadow-1: 0 1px 2px rgb(16 21 29 / 0.06);
-  --shadow-2: 0 4px 16px rgb(16 21 29 / 0.08);
-  --shadow-3: 0 18px 48px rgb(16 21 29 / 0.16);
+  --band: #171d13;
+  --scrim: rgb(0 0 0 / 0.6);
+  --shadow-1: 0 1px 0 rgb(0 0 0 / 0.5);
+  --shadow-2: 0 1px 0 rgb(0 0 0 / 0.55);
+  --shadow-3: 0 10px 34px rgb(0 0 0 / 0.6);
 }
 
 @theme inline {
@@ -104,6 +122,8 @@
   --color-crit: var(--crit);
   --color-crit-soft: var(--crit-soft);
   --color-info: var(--info);
+  --color-band: var(--band);
+  --color-rule: var(--rule);
 
   /* No web fonts: the project's premise is that it runs anywhere with
      nothing installed, and a dashboard needing the network to look right
@@ -153,7 +173,7 @@
   :focus-visible {
     outline: 2px solid var(--accent);
     outline-offset: 2px;
-    border-radius: 6px;
+    border-radius: 0;
   }
 
   ::-webkit-scrollbar {
@@ -165,7 +185,7 @@
   }
   ::-webkit-scrollbar-thumb {
     background: var(--surface-3);
-    border-radius: 5px;
+    border-radius: 0;
   }
   ::-webkit-scrollbar-thumb:hover {
     background: var(--line);
@@ -173,18 +193,52 @@
 }
 
 @layer components {
+  /* A printed form, not a floating card: square corners, a heavy rule along
+     the top edge, and a hairline box. Radius and drop shadows are what make
+     every dashboard look like every other dashboard. */
   .card {
     background: var(--surface);
     border: 1px solid var(--line);
-    border-radius: 14px;
-    padding: 18px 20px;
-    box-shadow: var(--shadow-1);
+    border-top: 2px solid var(--rule);
+    border-radius: 0;
+    padding: 16px 18px 18px;
+  }
+
+  /* Green-bar striping. Applied to a list or tbody, it bands alternate rows
+     the way fanfold paper did -- which is genuinely why fanfold paper did it:
+     the eye loses the row on a wide line of figures. */
+  .banded > *:nth-child(odd) {
+    background: var(--surface);
+  }
+  .banded > *:nth-child(even) {
+    background: var(--band);
+  }
+
+  /* The tractor-feed margin. Purely a signature, kept to the page edge where
+     it never competes with a number. */
+  .perf {
+    background-image: radial-gradient(
+      circle at 50% 50%,
+      var(--line) 0 2px,
+      transparent 2px
+    );
+    background-size: 14px 22px;
+    background-repeat: repeat-y;
+  }
+
+  /* Uppercase mono column heads, as a printed report sets them. */
+  .colhead {
+    font-family: var(--font-mono);
+    font-size: 10px;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--ink-mut);
   }
 
   .kbd {
     display: inline-block;
     padding: 1px 6px;
-    border-radius: 5px;
+    border-radius: 0;
     border: 1px solid var(--line);
     background: var(--surface-2);
     color: var(--ink-mut);

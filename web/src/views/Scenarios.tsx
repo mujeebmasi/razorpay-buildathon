@@ -28,7 +28,7 @@ export function Scenarios() {
       }
     >
       {loading && !data ? (
-        <Skeleton className="h-96 rounded-[10px]" />
+        <Skeleton className="h-96 rounded-none" />
       ) : error || !data ? (
         <p className="text-[12.5px] text-crit">Could not load the catalogue: {error}</p>
       ) : (
@@ -63,7 +63,7 @@ export function Scenarios() {
                     <td className="border-b border-line-soft px-2.5 py-2.5 align-top">
                       <span
                         className={cx(
-                          'whitespace-nowrap rounded px-1.5 py-0.5 text-[9.5px] font-bold uppercase tracking-wider',
+                          'whitespace-nowrap rounded-none px-1.5 py-0.5 text-[9.5px] font-bold uppercase tracking-wider',
                           DIFFICULTY[s.difficulty],
                         )}
                       >

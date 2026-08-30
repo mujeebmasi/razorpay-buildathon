@@ -19,7 +19,7 @@ function Funnel({ run }: { run: RunSummary }) {
       {tiers.map(([tier, count]) => (
         <div key={tier}>
           <div className="mb-1.5 flex items-baseline gap-2.5">
-            <span className="shrink-0 rounded bg-accent-soft px-1.5 py-[2px] font-mono text-[10.5px] font-semibold text-accent">
+            <span className="shrink-0 rounded-none bg-accent-soft px-1.5 py-[2px] font-mono text-[10.5px] font-semibold text-accent">
               {tier}
             </span>
             <span className="min-w-0 flex-1 truncate text-[12px] text-ink-2">
@@ -30,9 +30,9 @@ function Funnel({ run }: { run: RunSummary }) {
               {pct((count ?? 0) / total)}
             </span>
           </div>
-          <div className="h-2 overflow-hidden rounded-full bg-surface-2">
+          <div className="h-2 overflow-hidden rounded-none bg-surface-2">
             <div
-              className="h-full rounded-full bg-gradient-to-r from-accent-2 to-accent transition-[width] duration-700 ease-[cubic-bezier(.22,.8,.28,1)]"
+              className="h-full rounded-none bg-gradient-to-r from-accent-2 to-accent transition-[width] duration-700 ease-[cubic-bezier(.22,.8,.28,1)]"
               style={{ width: pct((count ?? 0) / max) }}
             />
           </div>
@@ -276,11 +276,11 @@ export function Overview({
         aside={
           <div className="flex shrink-0 gap-3">
             <span className="inline-flex items-center gap-1.5 text-[11px] text-ink-mut">
-              <i className="inline-block size-[9px] rounded-sm bg-ok" />
+              <i className="inline-block size-[9px] rounded-none bg-ok" />
               matched
             </span>
             <span className="inline-flex items-center gap-1.5 text-[11px] text-ink-mut">
-              <i className="inline-block size-[9px] rounded-sm bg-crit" />
+              <i className="inline-block size-[9px] rounded-none bg-crit" />
               open
             </span>
           </div>

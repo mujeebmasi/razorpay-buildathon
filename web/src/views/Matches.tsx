@@ -29,7 +29,7 @@ export function Matches({ tiers }: { tiers: string[] }) {
           aria-label="Tier"
           value={tier}
           onChange={(e) => setTier(e.target.value)}
-          className="select cursor-pointer rounded-[9px] border border-line bg-surface py-2.5 pl-3 pr-8 text-[12.5px] text-ink-2 transition-colors hover:border-accent focus:border-accent focus:outline-none"
+          className="select cursor-pointer rounded-none border border-line bg-surface py-2.5 pl-3 pr-8 text-[12.5px] text-ink-2 transition-colors hover:border-accent focus:border-accent focus:outline-none"
         >
           <option value="all">All tiers</option>
           {tiers.map((t) => (
@@ -52,7 +52,7 @@ export function Matches({ tiers }: { tiers: string[] }) {
           {page.items.map((m) => (
             <article
               key={m.id}
-              className="rounded-[10px] border border-l-[3px] border-line border-l-ok bg-surface px-3.5 py-3"
+              className="rounded-none border border-l-[3px] border-line border-l-ok bg-surface px-3.5 py-3"
             >
               <div className="flex items-baseline justify-between gap-3">
                 <span className="flex min-w-0 flex-wrap items-center gap-2">

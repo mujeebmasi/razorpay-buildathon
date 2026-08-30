@@ -5,6 +5,7 @@ import { useAsync } from './hooks/useAsync'
 import { useTheme } from './hooks/useTheme'
 import { AppBar } from './components/AppBar'
 import { KpiRow, KpiSkeleton } from './components/KpiRow'
+import { AskPanel } from './components/AskPanel'
 import { Skeleton, SkeletonRows } from './components/primitives'
 import { useToast } from './components/Toast'
 import { Overview } from './views/Overview'
@@ -129,7 +130,7 @@ export function App() {
     <>
       <a
         href="#main"
-        className="sr-only focus:not-sr-only focus:absolute focus:left-3 focus:top-3 focus:z-100 focus:rounded-md focus:bg-accent focus:px-4 focus:py-2.5 focus:font-semibold focus:text-white"
+        className="sr-only focus:not-sr-only focus:absolute focus:left-3 focus:top-3 focus:z-100 focus:rounded-none focus:bg-accent focus:px-4 focus:py-2.5 focus:font-semibold focus:text-white"
       >
         Skip to content
       </a>
@@ -155,19 +156,20 @@ export function App() {
           <>
             <KpiSkeleton />
             <div className="grid grid-cols-12 gap-3.5">
-              <Skeleton className="col-span-12 h-64 rounded-[14px] xl:col-span-8" />
-              <Skeleton className="col-span-12 h-64 rounded-[14px] xl:col-span-4" />
+              <Skeleton className="col-span-12 h-64 rounded-none xl:col-span-8" />
+              <Skeleton className="col-span-12 h-64 rounded-none xl:col-span-4" />
             </div>
           </>
         ) : run ? (
           <>
             {view === 'overview' && <KpiRow run={run} />}
 
+            <div className="grid grid-cols-1 gap-3.5 xl:grid-cols-[minmax(0,1fr)_340px]">
             <div
               id={'view-' + view}
               role="tabpanel"
               aria-labelledby={'tab-' + view}
-              className="animate-rise"
+              className="animate-rise min-w-0"
             >
               {view === 'overview' && <Overview run={run} onPickReason={pickReason} />}
               {view === 'exceptions' && (
@@ -182,6 +184,8 @@ export function App() {
               {view === 'matches' && <Matches tiers={tiers} />}
               {view === 'journal' && <Journal />}
               {view === 'scenarios' && <Scenarios />}
+            </div>
+            <AskPanel run={run} />
             </div>
           </>
         ) : null}

@@ -68,7 +68,7 @@ export function AppBar({
         <div className="flex min-w-0 items-center gap-3">
           <span
             aria-hidden
-            className="grid size-9 shrink-0 place-items-center rounded-[9px] bg-gradient-to-br from-accent to-accent-2 text-[19px] font-semibold text-white shadow-[var(--shadow-1)]"
+            className="grid size-9 shrink-0 place-items-center rounded-none bg-gradient-to-br from-accent to-accent-2 text-[19px] font-semibold text-white shadow-[var(--shadow-1)]"
           >
             &#8377;
           </span>
@@ -81,9 +81,9 @@ export function AppBar({
         <div className="flex items-center gap-2">
           <span
             title={'Residual decided by ' + adjudicator}
-            className="hidden max-w-[30vw] items-center gap-2 overflow-hidden text-ellipsis whitespace-nowrap rounded-full border border-line bg-surface px-2.5 py-1.5 font-mono text-[11.5px] text-ink-2 md:inline-flex"
+            className="hidden max-w-[30vw] items-center gap-2 overflow-hidden text-ellipsis whitespace-nowrap rounded-none border border-line bg-surface px-2.5 py-1.5 font-mono text-[11.5px] text-ink-2 md:inline-flex"
           >
-            <span className="size-[7px] shrink-0 rounded-full bg-ok shadow-[0_0_0_3px_var(--ok-soft)]" />
+            <span className="size-[7px] shrink-0 rounded-none bg-ok shadow-[0_0_0_3px_var(--ok-soft)]" />
             {adjudicator}
           </span>
 
@@ -92,7 +92,7 @@ export function AppBar({
             onClick={onToggleTheme}
             aria-label="Switch colour theme"
             title="Theme (T)"
-            className="grid size-9 cursor-pointer place-items-center rounded-lg border border-line bg-surface text-ink-2 transition hover:border-accent hover:bg-surface-2 hover:text-ink active:translate-y-px"
+            className="grid size-9 cursor-pointer place-items-center rounded-none border border-line bg-surface text-ink-2 transition hover:border-accent hover:bg-surface-2 hover:text-ink active:translate-y-px"
           >
             {theme === 'light' ? <Moon size={15} /> : <Sun size={15} />}
           </button>
@@ -102,7 +102,7 @@ export function AppBar({
             onClick={onRerun}
             disabled={busy}
             title="Re-run the pipeline (R)"
-            className="flex cursor-pointer items-center gap-2 rounded-lg border border-line bg-surface px-2.5 py-2 text-[12.5px] font-medium text-ink-2 transition hover:border-accent hover:bg-surface-2 hover:text-ink active:translate-y-px disabled:pointer-events-none disabled:opacity-55 sm:px-3.5"
+            className="flex cursor-pointer items-center gap-2 rounded-none border border-line bg-surface px-2.5 py-2 text-[12.5px] font-medium text-ink-2 transition hover:border-accent hover:bg-surface-2 hover:text-ink active:translate-y-px disabled:pointer-events-none disabled:opacity-55 sm:px-3.5"
           >
             <RefreshCw size={15} className={busy ? 'animate-spin' : undefined} />
             <span className="hidden sm:inline">Re-run</span>
@@ -137,7 +137,7 @@ export function AppBar({
               {counts[tab.id] ? (
                 <span
                   className={cx(
-                    'ml-1.5 inline-block rounded-full px-[7px] align-[1px] font-mono text-[10.5px]',
+                    'ml-1.5 inline-block rounded-none px-[7px] align-[1px] font-mono text-[10.5px]',
                     active ? 'bg-accent-soft text-accent' : 'bg-surface-3 text-ink-mut',
                   )}
                 >

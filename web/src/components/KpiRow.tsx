@@ -20,9 +20,9 @@ const VALUE: Record<Tone, string> = {
 
 export function KpiSkeleton() {
   return (
-    <div className="mb-4 grid grid-cols-2 gap-3 md:grid-cols-3 xl:grid-cols-5">
+    <div className="mb-4 grid grid-cols-2 gap-px border border-line bg-line sm:grid-cols-3 xl:grid-cols-5">
       {Array.from({ length: 5 }, (_, i) => (
-        <Skeleton key={i} className="h-[88px] rounded-[14px]" />
+        <Skeleton key={i} className="h-[84px] rounded-none" />
       ))}
     </div>
   )
@@ -66,11 +66,11 @@ export function KpiRow({ run }: { run: RunSummary }) {
   ]
 
   return (
-    <div className="mb-4 grid grid-cols-2 gap-3 md:grid-cols-3 xl:grid-cols-5">
+    <div className="mb-4 grid grid-cols-2 border-x border-b border-line border-t-2 border-t-rule bg-surface sm:grid-cols-3 xl:grid-cols-5">
       {items.map((k) => (
         <div
           key={k.label}
-          className="relative overflow-hidden rounded-[14px] border border-line bg-surface px-4 py-3.5"
+          className="relative overflow-hidden border-b border-r border-line-soft px-4 py-3.5 last:border-r-0 sm:border-b-0"
         >
           <span
             aria-hidden

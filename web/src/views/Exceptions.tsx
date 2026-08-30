@@ -32,7 +32,7 @@ function CopyId({ value }: { value: string }) {
           toast('Clipboard unavailable')
         }
       }}
-      className="cursor-pointer rounded px-1 font-mono text-inherit text-ink-mut transition-colors hover:text-accent"
+      className="cursor-pointer rounded-none px-1 font-mono text-inherit text-ink-mut transition-colors hover:text-accent"
     >
       {value}
     </button>
@@ -64,7 +64,7 @@ function DetailBody({ item }: { item: ExceptionDetail | null }) {
         <span>{item.as_of}</span>
       </div>
 
-      <div className="rounded-[10px] border border-accent/30 bg-accent-soft p-3.5 text-[12.5px] leading-relaxed text-ink-2">
+      <div className="rounded-none border border-accent/30 bg-accent-soft p-3.5 text-[12.5px] leading-relaxed text-ink-2">
         <strong className="mb-0.5 block text-accent">{item.owner}</strong>
         {prose(item.action)}
       </div>
@@ -104,7 +104,7 @@ function DetailBody({ item }: { item: ExceptionDetail | null }) {
             {item.agent_trace.map((step, i) => (
               <li
                 key={i}
-                className="flex items-baseline gap-2.5 rounded-md bg-surface-2 px-2.5 py-2 font-mono text-[11.5px] text-ink-2"
+                className="flex items-baseline gap-2.5 rounded-none bg-surface-2 px-2.5 py-2 font-mono text-[11.5px] text-ink-2"
               >
                 <span className="shrink-0 text-[10px] font-bold text-accent">
                   {String(i + 1).padStart(2, '0')}
@@ -126,7 +126,7 @@ function DetailBody({ item }: { item: ExceptionDetail | null }) {
           {item.records.map((r) => (
             <div
               key={r.id}
-              className="mb-1.5 rounded-md bg-surface-2 px-2.5 py-2 font-mono text-[11.5px] leading-relaxed text-ink-2"
+              className="mb-1.5 rounded-none bg-surface-2 px-2.5 py-2 font-mono text-[11.5px] leading-relaxed text-ink-2"
             >
               <div className="mb-0.5 flex flex-wrap items-baseline gap-2">
                 <span className="text-[9.5px] font-bold uppercase tracking-wider text-accent">
@@ -305,7 +305,7 @@ export function Exceptions({
             aria-label="Search exceptions"
             autoComplete="off"
             spellCheck={false}
-            className="w-full rounded-[9px] border border-line bg-surface py-2.5 pl-9 pr-10 text-[13px] transition-colors placeholder:text-ink-mut focus:border-accent focus:bg-bg-elev focus:outline-none"
+            className="w-full rounded-none border border-line bg-surface py-2.5 pl-9 pr-10 text-[13px] transition-colors placeholder:text-ink-mut focus:border-accent focus:bg-bg-elev focus:outline-none"
           />
           <kbd className="kbd pointer-events-none absolute right-2.5 hidden sm:block">/</kbd>
         </div>
@@ -315,7 +315,7 @@ export function Exceptions({
             aria-label="Severity"
             value={severity}
             onChange={(e) => setSeverity(e.target.value)}
-            className="select min-w-0 flex-1 cursor-pointer rounded-[9px] border border-line bg-surface py-2.5 pl-3 pr-8 text-[12.5px] text-ink-2 transition-colors hover:border-accent focus:border-accent focus:outline-none sm:flex-none"
+            className="select min-w-0 flex-1 cursor-pointer rounded-none border border-line bg-surface py-2.5 pl-3 pr-8 text-[12.5px] text-ink-2 transition-colors hover:border-accent focus:border-accent focus:outline-none sm:flex-none"
           >
             <option value="all">All severities</option>
             <option value="critical">Critical only</option>
@@ -327,7 +327,7 @@ export function Exceptions({
             aria-label="Reason"
             value={reasonFilter}
             onChange={(e) => onReasonFilter(e.target.value)}
-            className="select min-w-0 flex-1 cursor-pointer rounded-[9px] border border-line bg-surface py-2.5 pl-3 pr-8 text-[12.5px] text-ink-2 transition-colors hover:border-accent focus:border-accent focus:outline-none sm:flex-none"
+            className="select min-w-0 flex-1 cursor-pointer rounded-none border border-line bg-surface py-2.5 pl-3 pr-8 text-[12.5px] text-ink-2 transition-colors hover:border-accent focus:border-accent focus:outline-none sm:flex-none"
           >
             <option value="all">All reasons</option>
             {reasons.map((r) => (
@@ -341,7 +341,7 @@ export function Exceptions({
 
       {/* severity distribution */}
       {severityBar.length > 0 && (
-        <div className="mb-2.5 flex h-[5px] overflow-hidden rounded-[3px] bg-surface-2" aria-hidden>
+        <div className="mb-2.5 flex h-[5px] overflow-hidden rounded-none bg-surface-2" aria-hidden>
           {severityBar.map((s) => (
             <i
               key={s.key}
@@ -377,7 +377,7 @@ export function Exceptions({
               ref={listRef}
               role="listbox"
               aria-label="Exception register"
-              className="flex flex-col gap-[7px]"
+              className="banded flex flex-col border-x border-b border-line"
             >
               {items.map((it) => {
                 const active = it.id === selected
@@ -396,10 +396,10 @@ export function Exceptions({
                       }
                     }}
                     className={cx(
-                      'cursor-pointer rounded-[10px] border border-l-[3px] bg-surface px-3.5 py-3 transition-all duration-150',
-                      'hover:translate-x-0.5 hover:bg-surface-2',
+                      'cursor-pointer rounded-none border-b border-l-[3px] border-b-line-soft px-3.5 py-3 transition-colors duration-150',
+                      'hover:bg-surface-3',
                       SEVERITY_BORDER[it.severity],
-                      active ? 'border-accent bg-surface-2' : 'border-line',
+                      active ? 'bg-accent-soft' : '',
                     )}
                   >
                     <div className="flex items-baseline justify-between gap-3">
@@ -431,7 +431,7 @@ export function Exceptions({
             <button
               type="button"
               onClick={() => void loadMore()}
-              className="no-print mt-2.5 w-full cursor-pointer rounded-[10px] border border-dashed border-line bg-surface py-3 text-[12.5px] text-ink-2 transition-colors hover:border-accent hover:text-accent"
+              className="no-print mt-2.5 w-full cursor-pointer rounded-none border border-dashed border-line bg-surface py-3 text-[12.5px] text-ink-2 transition-colors hover:border-accent hover:text-accent"
             >
               Load more
             </button>
@@ -441,7 +441,7 @@ export function Exceptions({
         {/* desktop: docked panel. narrow: bottom sheet. */}
         {!isNarrow && (
           <aside
-            className="sticky top-[124px] max-h-[calc(100vh-160px)] overflow-y-auto rounded-[14px] border border-line bg-surface shadow-[var(--shadow-1)]"
+            className="sticky top-[124px] max-h-[calc(100vh-160px)] overflow-y-auto rounded-none border border-line bg-surface shadow-[var(--shadow-1)]"
             aria-label="Exception detail"
           >
             <div className="px-5 py-4.5">
@@ -459,12 +459,12 @@ export function Exceptions({
             onClick={() => setSheetOpen(false)}
           />
           <div className="animate-sheet-up absolute inset-x-0 bottom-0 max-h-[88vh] overflow-y-auto rounded-t-[20px] border border-b-0 border-line bg-surface pb-[env(safe-area-inset-bottom)] shadow-[var(--shadow-3)]">
-            <div className="sticky top-0 z-2 mx-auto mt-2.5 h-1 w-9 rounded-sm bg-line" aria-hidden />
+            <div className="sticky top-0 z-2 mx-auto mt-2.5 h-1 w-9 rounded-none bg-line" aria-hidden />
             <button
               type="button"
               onClick={() => setSheetOpen(false)}
               aria-label="Close detail"
-              className="absolute right-3 top-2.5 z-3 grid size-8 cursor-pointer place-items-center rounded-full border border-line bg-surface-2 text-ink-2"
+              className="absolute right-3 top-2.5 z-3 grid size-8 cursor-pointer place-items-center rounded-none border border-line bg-surface-2 text-ink-2"
             >
               <X size={15} />
             </button>

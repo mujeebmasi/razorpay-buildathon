@@ -12,7 +12,7 @@ import { Card, Note } from '../components/primitives'
 function TrustBoundary() {
   return (
     <figure className="m-0">
-      <div className="overflow-x-auto rounded-lg border border-line bg-surface-1 p-4">
+      <div className="overflow-x-auto rounded-none border border-line bg-surface-1 p-4">
         <svg
           viewBox="0 0 720 132"
           role="img"
@@ -87,7 +87,7 @@ function CaseCard({ item, index }: { item: AgentCase; index: number }) {
   return (
     <article
       className={cx(
-        'overflow-hidden rounded-lg border bg-surface-1 transition-colors',
+        'overflow-hidden rounded-none border bg-surface-1 transition-colors',
         vetoed ? 'border-crit/45' : declined ? 'border-line' : 'border-ok/40',
       )}
     >
@@ -99,7 +99,7 @@ function CaseCard({ item, index }: { item: AgentCase; index: number }) {
       >
         <span
           className={cx(
-            'mt-[3px] shrink-0 rounded px-1.5 py-[2px] font-mono text-[10px] font-bold uppercase tracking-wider',
+            'mt-[3px] shrink-0 rounded-none px-1.5 py-[2px] font-mono text-[10px] font-bold uppercase tracking-wider',
             badgeTone,
           )}
         >
@@ -135,7 +135,7 @@ function CaseCard({ item, index }: { item: AgentCase; index: number }) {
 
           <ol className="m-0 flex list-none flex-col gap-2 p-0">
             {item.steps.map((step, i) => (
-              <li key={i} className="rounded-md bg-surface-2 p-2.5">
+              <li key={i} className="rounded-none bg-surface-2 p-2.5">
                 <div className="flex items-baseline gap-2">
                   <span className="font-mono text-[10px] font-bold text-accent">
                     {String(i + 1).padStart(2, '0')}
@@ -148,7 +148,7 @@ function CaseCard({ item, index }: { item: AgentCase; index: number }) {
                     )
                   </span>
                 </div>
-                <pre className="mt-1.5 max-h-32 overflow-auto whitespace-pre-wrap break-all rounded bg-surface-1 p-2 font-mono text-[10.5px] leading-relaxed text-ink-mut">
+                <pre className="mt-1.5 max-h-32 overflow-auto whitespace-pre-wrap break-all rounded-none bg-surface-1 p-2 font-mono text-[10.5px] leading-relaxed text-ink-mut">
                   {step.result}
                 </pre>
               </li>
@@ -165,7 +165,7 @@ function CaseCard({ item, index }: { item: AgentCase; index: number }) {
           </p>
           <p
             className={cx(
-              'rounded-md border-l-2 bg-surface-2 p-3 text-[12.5px] leading-relaxed text-ink-2',
+              'rounded-none border-l-2 bg-surface-2 p-3 text-[12.5px] leading-relaxed text-ink-2',
               vetoed ? 'border-crit' : declined ? 'border-warn' : 'border-ok',
             )}
           >
@@ -178,7 +178,7 @@ function CaseCard({ item, index }: { item: AgentCase; index: number }) {
                 What the verifier did with it
               </p>
               {vetoed ? (
-                <div className="rounded-md border border-crit/40 bg-crit-soft p-3">
+                <div className="rounded-none border border-crit/40 bg-crit-soft p-3">
                   <p className="text-[12.5px] font-semibold text-crit">
                     Proposal rejected. It never reached the ledger.
                   </p>
@@ -193,7 +193,7 @@ function CaseCard({ item, index }: { item: AgentCase; index: number }) {
                   </p>
                 </div>
               ) : (
-                <p className="rounded-md border border-ok/35 bg-ok-soft p-3 text-[12.5px] text-ok">
+                <p className="rounded-none border border-ok/35 bg-ok-soft p-3 text-[12.5px] text-ok">
                   Recomputed from the original records and accepted. Posted to the journal.
                 </p>
               )}

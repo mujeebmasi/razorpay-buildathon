@@ -9,10 +9,10 @@ export function Journal() {
     return (
       <div className="grid grid-cols-12 gap-3.5">
         <div className="col-span-12 lg:col-span-5">
-          <Skeleton className="h-80 rounded-[14px]" />
+          <Skeleton className="h-80 rounded-none" />
         </div>
         <div className="col-span-12 lg:col-span-7">
-          <Skeleton className="h-80 rounded-[14px]" />
+          <Skeleton className="h-80 rounded-none" />
         </div>
       </div>
     )
@@ -95,7 +95,7 @@ export function Journal() {
         {data.entries.map((entry) => (
           <div
             key={entry.id}
-            className="mb-2.5 rounded-[10px] border border-line bg-surface-2 px-3.5 py-3"
+            className="mb-2.5 rounded-none border border-line bg-surface-2 px-3.5 py-3"
           >
             <div className="mb-1.5 flex flex-wrap justify-between gap-2.5 font-mono text-[11px] text-ink-mut">
               <span>{entry.id}</span>

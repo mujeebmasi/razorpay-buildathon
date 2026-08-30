@@ -54,7 +54,7 @@ export function SeverityPill({ severity }: { severity: Severity }) {
   return (
     <span
       className={cx(
-        'shrink-0 rounded-[5px] px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider',
+        'shrink-0 rounded-none px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider',
         SEVERITY_PILL[severity],
       )}
     >
@@ -65,7 +65,7 @@ export function SeverityPill({ severity }: { severity: Severity }) {
 
 export function TierPill({ tier }: { tier: string }) {
   return (
-    <span className="shrink-0 rounded-[5px] bg-accent-soft px-2 py-0.5 font-mono text-[10px] font-bold text-accent">
+    <span className="shrink-0 rounded-none bg-accent-soft px-2 py-0.5 font-mono text-[10px] font-bold text-accent">
       {tier}
     </span>
   )
@@ -119,7 +119,7 @@ export function Note({
   return (
     <div
       className={cx(
-        'mt-3.5 rounded-[10px] border p-3 text-xs leading-relaxed text-ink-2',
+        'mt-3.5 rounded-none border p-3 text-xs leading-relaxed text-ink-2',
         tone === 'ok'
           ? 'border-ok/30 bg-ok-soft'
           : 'border-warn/30 bg-warn-soft',
@@ -142,7 +142,7 @@ export function EvidenceItem({
   return (
     <div
       className={cx(
-        'mb-1.5 rounded-md border-l-2 bg-surface-2 px-2.5 py-2 text-xs leading-relaxed text-ink-2',
+        'mb-1.5 rounded-none border-l-2 bg-surface-2 px-2.5 py-2 text-xs leading-relaxed text-ink-2',
         weight > 0 ? 'border-l-ok' : weight < 0 ? 'border-l-crit' : 'border-l-line',
       )}
     >
@@ -163,14 +163,14 @@ export function Empty({ children }: { children: ReactNode }) {
 }
 
 export function Skeleton({ className }: { className?: string }) {
-  return <div className={cx('animate-shimmer rounded-md', className)} />
+  return <div className={cx('animate-shimmer rounded-none', className)} />
 }
 
 export function SkeletonRows({ count = 6 }: { count?: number }) {
   return (
     <div className="flex flex-col gap-[7px]">
       {Array.from({ length: count }, (_, i) => (
-        <Skeleton key={i} className="h-[74px] rounded-[10px]" />
+        <Skeleton key={i} className="h-[74px] rounded-none" />
       ))}
     </div>
   )
@@ -190,11 +190,11 @@ export function Bar({
 }) {
   return (
     <div
-      className={cx('overflow-hidden rounded-[3px] bg-surface-2', className)}
+      className={cx('overflow-hidden rounded-none bg-surface-2', className)}
       style={{ height }}
     >
       <div
-        className="h-full rounded-[3px] transition-[width] duration-700 ease-[cubic-bezier(.22,.8,.28,1)]"
+        className="h-full rounded-none transition-[width] duration-700 ease-[cubic-bezier(.22,.8,.28,1)]"
         style={{ width: `${Math.max(0, Math.min(100, fraction * 100))}%`, background: colour }}
       />
     </div>

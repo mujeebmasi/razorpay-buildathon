@@ -124,7 +124,7 @@ export function DailyChart({ data }: { data: DailyPoint[] }) {
       {hover && (
         <div
           role="tooltip"
-          className="pointer-events-none fixed z-60 whitespace-nowrap rounded-md border border-line bg-surface-3 px-3 py-2 text-[11.5px] shadow-[var(--shadow-2)]"
+          className="pointer-events-none fixed z-60 whitespace-nowrap rounded-none border border-line bg-surface-3 px-3 py-2 text-[11.5px] shadow-[var(--shadow-2)]"
           style={{
             left: Math.min(hover.x + 14, window.innerWidth - 190),
             top: Math.max(hover.y - 78, 8),
